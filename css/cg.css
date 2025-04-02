@@ -22,7 +22,7 @@ body {
 
 #mainContainer {
     position: relative;
-
+    
     width: 100vw;
     height: 100vh;
 
@@ -63,10 +63,10 @@ body {
     left: 50.5%;
     transform: translate(-50%, 0%);
     border: none;
-
+    
     /* cg already handle left and right padding */
-    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0;
-
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0; 
+    
     display: none;
 }
 
