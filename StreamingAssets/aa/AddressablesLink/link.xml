@@ -23,6 +23,7 @@
     <type fullname="Crystal.SafeArea" preserve="all" />
     <type fullname="CullingGroup" preserve="all" />
     <type fullname="CullingManager" preserve="all" />
+    <type fullname="CustomItemAltImage" preserve="all" />
     <type fullname="CustomizationImageData" preserve="all" />
     <type fullname="DontGoThroughThings" preserve="all" />
     <type fullname="FirebaseDynamicLinkCreator" preserve="all" />
