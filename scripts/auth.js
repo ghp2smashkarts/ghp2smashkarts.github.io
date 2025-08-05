@@ -32,6 +32,7 @@ function signInWithCustomToken(token)
   firebase.auth().signInWithCustomToken(token)
   .then((userCredential) => {
     console.log("signInWithCustomToken Success");
+    sendAuthDataToUnity();
   })
   .catch(function(error)
   {
@@ -52,15 +53,22 @@ function signInAnonymously()
 
 function signInWithEmail(email, password)
 {
-  firebase.auth().signInWithEmailAndPassword(email, password)
-  .then((userCredential) => {
-    console.log("signInWithEmailAndPassword Success");
-  })
-  .catch(function(error)
+  firebase.auth().signInWithEmailAndPassword(email, password).then((userCredential) =>
   {
-    console.log("error logging in " + error.code);
-    console.error(error);
-    window.unityGame.SendMessage(unityFirebaseGameOjbectName, "firebaseSignInWithEmailFailed", error.message);
+    console.log("signInWithEmailAndPassword Success");
+  }).catch(function (error)
+  {
+    // Checks if no account is made with this email and makes one
+    if (error.code === "auth/user-not-found")
+    {
+      linkUserWithEmail(email, password);
+    }
+    else
+    {
+      console.log("error logging in " + error.code);
+      console.error(error);
+      window.unityGame.SendMessage(unityFirebaseGameOjbectName, "firebaseSignInWithEmailFailed", error.message);
+    }
   });
 }
 
@@ -191,6 +199,60 @@ function linkOrSignInWithApple()
   }
 }
 
+let addedDiscordMessageListener = false;
+function linkOrSignInWithDiscord(scope)
+{
+  if(firebase.auth().currentUser != null && firebase.auth().currentUser.isAnonymous)
+  {
+    const popup = window.open(
+        `${discordLoginRedirectUrl}?origin=${window.location.origin}&scope=${scope}`,
+        'DiscordLogin',
+        'width==1000,height=760'
+    );
+
+    if (!popup)
+    {
+      window.unityGame.SendMessage(unityFirebaseGameOjbectName, "firebaseLinkUserWithEmailFailed", "popup blocked");
+      return;
+    }
+
+    // Start monitoring the popup for closure
+    const popupClosedInterval = setInterval(() =>
+    {
+      if (popup.closed)
+      {
+        clearInterval(popupClosedInterval);
+        window.unityGame.SendMessage(unityFirebaseGameOjbectName, "firebaseLinkUserWithEmailFailed", "User closed the popup or cancelled login");
+      }
+    }, 10000);
+
+    if(!addedDiscordMessageListener)
+    {
+      addedDiscordMessageListener = true;
+
+      // Listen for a message from the popup
+      window.addEventListener('message', async (event) =>
+      {
+        const tempUrl = new URL(discordLoginRedirectUrl);
+
+        if (event.origin === tempUrl.origin && event.data && typeof event.data === 'object' && 'discordLoginCode' in event.data)
+        {
+          clearInterval(popupClosedInterval);
+
+          const response = await fetch(`${discordLoginCFUrl}?code=${event.data.discordLoginCode}&redirect_uri=${discordLoginRedirectUrl}&existingFBId=${firebase.auth().currentUser.uid}`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+          });
+
+          const {customToken: customFBToken} = await response.json();
+
+          signInWithCustomToken(customFBToken);
+        }
+      });
+    }
+  }
+}
+
 function signOut()
 {
   firebase.auth().signOut().then(function() {
@@ -226,8 +288,13 @@ function sendPasswordResetEmail(emailAddress)
   });
 }
 
+// cache the nodeKeys for UD and UDRO the first time they are loaded
+// use this to limit retry attempts to reload when it fails due to race condition
+let firstLoadFailUD;
+let firstLoadFailUDRO;
 function getValueTT(nodeKey)
 {
+  const RETRY_DELAY_MS = 1000;
   const dbRef = firebase.database().ref();
   dbRef.child(nodeKey).once('value').then((snapshot) => {
     if (snapshot.exists())
@@ -243,6 +310,77 @@ function getValueTT(nodeKey)
   {
     window.unityGame.SendMessage(unityFirebaseGameOjbectName, "OnGetValueError", nodeKey, error.message);
     console.error(error);
+
+    // Retry only on specific transient error
+    if (error.code === "PERMISSION_DENIED" || error.message.includes("permission_denied"))
+    {
+      // failed to get a value with permission denied error
+      // this may be hacking
+      // or it could be the first time loading hang bug
+      // in that case we want to retry the load once, but only for ud and udro nodes
+      // to do this we will cache the node keys for them separately
+      // if they are yet undefined, we will retry once
+
+      const platform = isMobile()? "mobile" : "desktop";
+      //console.log("platform: "+platform);
+
+      const portal = (window.location != window.parent.location ? document.referrer : document.location.href);
+      //console.log("portal: " + portal);
+      // e.g.
+      // https://smashkarts-dev.firebaseapp.com/tests/mmc/udlh17/tt-dev.html
+      const url = new URL(portal);
+      //console.log("url: " + url);
+
+      const domain = url.hostname;
+      //console.log("domain: "+domain);
+
+      const prunedDomain = domain.replace(/\./g, "-");
+      //console.log("prunedDomain: " + prunedDomain);
+
+      const fullPlatform = prunedDomain + "-" +platform;
+      //console.log("fullPlatform: " + fullPlatform);
+
+      const isUD = nodeKey.startsWith("users/") && nodeKey.endsWith("/ud");
+      const isUDRO = nodeKey.startsWith("users/") && nodeKey.endsWith("/udro");
+
+      let shouldRetry = false;
+
+      if (isUD) {
+        if (!firstLoadFailUD) {
+          firstLoadFailUD = nodeKey;
+          shouldRetry = true;
+          console.warn(`Caching firstLoadFailUD and retrying: ${nodeKey}`);
+          dbRef.child(`debug/loadStats/${firebase.auth().currentUser.uid}/${fullPlatform}/ud/failCount`).set(firebase.database.ServerValue.increment(1));
+        } else {
+          console.warn(`Already cached firstLoadFailUD. Not retrying again.`);
+          // how can we know this is the fail we are expecting? and not just a fail at a different point in the apps life cycle?
+          dbRef.child(`debug/loadStats/${firebase.auth().currentUser.uid}/${fullPlatform}/ud/retryFailCount`).set(firebase.database.ServerValue.increment(1));
+        }
+      }
+      else if (isUDRO)
+      {
+        if (!firstLoadFailUDRO)
+        {
+          firstLoadFailUDRO = nodeKey;
+          shouldRetry = true;
+          console.warn(`Caching firstLoadFailUDRO and retrying: ${nodeKey}`);
+          dbRef.child(`debug/loadStats/${firebase.auth().currentUser.uid}/${fullPlatform}/udro/failCount`).set(firebase.database.ServerValue.increment(1));
+        }
+        else
+        {
+          console.warn(`Already cached firstLoadFailUDRO. Not retrying again.`);
+          dbRef.child(`debug/loadStats/${firebase.auth().currentUser.uid}/${fullPlatform}/udro/retryFailCount`).set(firebase.database.ServerValue.increment(1));
+        }
+      }
+
+      if (shouldRetry) {
+        const logPath = `debug/loadStats/${firebase.auth().currentUser.uid}/${fullPlatform}/${isUD ? "ud" : "udro"}/retryCount`;
+        dbRef.child(logPath).set(firebase.database.ServerValue.increment(1));
+
+        setTimeout(() => getValueTT(nodeKey), RETRY_DELAY_MS);
+        return;
+      }
+    }
   });
 }
 
@@ -411,7 +549,7 @@ function logCloudFunctionError(debugErrorRootNode, jsonData, message, functionId
       }
     });
   }
-  else 
+  else
   {
     console.log("logCloudFunctionError:: " + debugErrorRootNode + " " + message);
   }

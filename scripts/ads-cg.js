@@ -141,27 +141,24 @@ function showInterstitial(audioOn, interstitialType, interstitialName)
         return;
     }
         
-    if (!isMobile())
+    const callbacks = 
     {
-        const callbacks = 
+        adStarted: () =>
         {
-            adStarted: () =>
-            {
-                interstitialStart(false);
-            },
-            adError: (error) =>
-            {
-                console.log("Error midgame ad:", error);
-                interstitialError(false);
-            },
-            adFinished: () =>
-            {
-                interstitialComplete(false);
-            }
-        };
-        
-        window.CrazyGames.SDK.ad.requestAd("midgame", callbacks);
-    }
+            interstitialStart(false);
+        },
+        adError: (error) =>
+        {
+            console.log("Error midgame ad:", error);
+            interstitialError(false);
+        },
+        adFinished: () =>
+        {
+            interstitialComplete(false);
+        }
+    };
+    
+    window.CrazyGames.SDK.ad.requestAd("midgame", callbacks);
 }
 
 function tryInitRewardedInterstitial(audioOn)
@@ -180,33 +177,30 @@ function tryShowRewardedInterstitial(unusedParam)
         return;
     }
     
-    if (!isMobile())
+    if(!window.adblockDetected)
     {
-        if(!window.adblockDetected)
+        const callbacks =
         {
-            const callbacks =
+            adStarted: () =>
             {
-                adStarted: () =>
-                {
-                    interstitialStart(true);
-                },
-                adError: (error) =>
-                {
-                    console.log("Error rewarded ad:", error);
-                    interstitialError(true);
-                },
-                adFinished: () =>
-                {
-                    interstitialComplete(true);
-                }
-            };
+                interstitialStart(true);
+            },
+            adError: (error) =>
+            {
+                console.log("Error rewarded ad:", error);
+                interstitialError(true);
+            },
+            adFinished: () =>
+            {
+                interstitialComplete(true);
+            }
+        };
 
-            window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
-        }
-        else
-        {
-            interstitialNoFill(true);
-        }
+        window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
+    }
+    else
+    {
+        interstitialNoFill(true);
     }
 }
 
@@ -271,12 +265,3 @@ function recordHappyTime()
     
     window.CrazyGames.SDK.game.happytime();
 }
-
-
-
-window.CrazyGames.SDK.getEnvironment((_error, environment) =>
-{
-    console.log(environment); // 'local', 'crazygames' or 'disabled'
-    cgEnvDisabled = (environment === "disabled");
-});
-

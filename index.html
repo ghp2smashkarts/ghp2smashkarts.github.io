@@ -4,6 +4,7 @@
 <head>
 	<script src="scripts/constants.js"></script>
 	
+	
 	<meta charset="utf-8">
 	<link rel="icon" href="images/favicon.png" sizes="16x16">
 	<!-- og: Open graph meta tags allow you to control what content shows up when a page is shared on Facebook -->
@@ -199,8 +200,8 @@
 	var sentGameInstanceStartEvent = false;
 
 	// choose the data file based on whether there's support for the ASTC texture compression format
-	var dataFile = "/4d52689fec2f2a42eebfd59fbdf22262.data.br";
-	var mobileDataFile = "/90be2b8ce33d7d5a62b823c0b178e931.data.br";
+	var dataFile = "/c27fc5fc0f6d7b97bab200f0a105b0b5.data.br";
+	var mobileDataFile = "/b3aaec3458a7e80e0d8df2ad3cf85305.data.br";
 	
 	//safety check to ensure we dont try to use the mobileDataFile if the filename hasnt been parsed during the build phase
 	if(!mobileDataFile.includes("MOBILE_DATA_FILENAME"))
@@ -208,7 +209,7 @@
 		var c = document.createElement("canvas");
 		var gl = c.getContext("webgl");
 		var gl2 = c.getContext("webgl2");
-		if ((gl && gl.getExtension('WEBGL_compressed_texture_astc')) || (gl2 && gl2.getExtension('WEBGL_compressed_texutre_astc'))) 
+		if ((gl && gl.getExtension('WEBGL_compressed_texture_astc')) || (gl2 && gl2.getExtension('WEBGL_compressed_texture_astc'))) 
 		{
 			dataFile = mobileDataFile;
 		}
@@ -219,8 +220,8 @@
 	const loaderUrl = buildUrl + "/76f034cff49013ce85bd6945ebf32347.loader.js";
 	const config = {
 		dataUrl: buildUrl + dataFile,
-		frameworkUrl: buildUrl + "/d9a19d735e17c9c94aa1566a1e2bca78.framework.js.br",
-		codeUrl: buildUrl + "/eaf37752f51e64bd7931b808163db86f.wasm.br",
+		frameworkUrl: buildUrl + "/cc48ddde5108e9b04766868e45602342.framework.js.br",
+		codeUrl: buildUrl + "/e7a5f7155bf783c7a27f1f914fd8ba2d.wasm.br",
 		// #if MEMORY_FILENAME
 		//         memoryUrl: buildUrl + "/",
 		// #endif
@@ -230,7 +231,7 @@
 		streamingAssetsUrl: "StreamingAssets",
 		companyName: "TallTeam",
 		productName: "Smash Karts",
-		productVersion: "2.7.0",
+		productVersion: "2.9.0",
 	};
 
 	var mainContainer = document.querySelector("#mainContainer");

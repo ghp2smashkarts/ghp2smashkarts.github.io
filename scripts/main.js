@@ -243,7 +243,7 @@ function isFullscreen()
 
     if(isCG && !cgEnvDisabled)
     {
-      window.CrazyGames.SDK.game.sdkGameLoadingStop();
+      window.CrazyGames.SDK.game.loadingStop();
     }
   }
 
