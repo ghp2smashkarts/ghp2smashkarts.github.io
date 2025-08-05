@@ -20,6 +20,7 @@
     <type fullname="CollectableFactory" preserve="all" />
     <type fullname="CollectableSpawnPoint" preserve="all" />
     <type fullname="CopyLinkScreen" preserve="all" />
+    <type fullname="Crusher" preserve="all" />
     <type fullname="Crystal.SafeArea" preserve="all" />
     <type fullname="CullingGroup" preserve="all" />
     <type fullname="CullingManager" preserve="all" />
@@ -38,6 +39,7 @@
     <type fullname="GameModeManagerCTF" preserve="all" />
     <type fullname="GameModeManagerFlagHolder" preserve="all" />
     <type fullname="GameModeManagerLootCollector" preserve="all" />
+    <type fullname="GameModeManagerPowerGrab" preserve="all" />
     <type fullname="GameModeManagerScoreCollector" preserve="all" />
     <type fullname="GameScreenManager" preserve="all" />
     <type fullname="GameStartScreen" preserve="all" />
@@ -90,9 +92,12 @@
     <type fullname="PointerEventsAutoDrive" preserve="all" />
     <type fullname="PointerEventsManual" preserve="all" />
     <type fullname="PopcornCelebrationSound" preserve="all" />
+    <type fullname="PowerGrabHudIcon" preserve="all" />
     <type fullname="PowerWidget" preserve="all" />
     <type fullname="PressAnyKeyToDisable" preserve="all" />
     <type fullname="ProgressBar" preserve="all" />
+    <type fullname="ProtectCameraFromObstacle" preserve="all" />
+    <type fullname="PUNTweenRotate" preserve="all" />
     <type fullname="SeasonWidget" preserve="all" />
     <type fullname="SkinnedHatPositioner" preserve="all" />
     <type fullname="SkipTutorialPopup" preserve="all" />
