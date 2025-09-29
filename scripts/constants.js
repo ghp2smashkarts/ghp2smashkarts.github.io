@@ -6,7 +6,6 @@ const discordClientIdDev = "1283039649975107584";
 const discordClientIdProd = "1217877285923979415";
 var discordClientId = discordClientIdProd;
 
-var discordLoginCFUrl = "https://us-central1-webgltest-17af1.cloudfunctions.net/discordSignIn";
 const discordLoginRedirectUrl = "https://smashkarts.io/discord-login.html";
 
 //ADS

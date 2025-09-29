@@ -17,7 +17,13 @@
     <type fullname="Collectable" preserve="all" />
     <type fullname="CollectableAnimator" preserve="all" />
     <type fullname="CollectableBoostAnimator" preserve="all" />
+    <type fullname="CollectableDrop" preserve="all" />
+    <type fullname="CollectableDropDataCache" preserve="all" />
     <type fullname="CollectableFactory" preserve="all" />
+    <type fullname="CollectableFlag" preserve="all" />
+    <type fullname="CollectableHolder" preserve="all" />
+    <type fullname="CollectablePower" preserve="all" />
+    <type fullname="CollectableScore" preserve="all" />
     <type fullname="CollectableSpawnPoint" preserve="all" />
     <type fullname="CopyLinkScreen" preserve="all" />
     <type fullname="Crusher" preserve="all" />
@@ -36,6 +42,7 @@
     <type fullname="GameManager" preserve="all" />
     <type fullname="GameModeController" preserve="all" />
     <type fullname="GameModeInfoScreen" preserve="all" />
+    <type fullname="GameModeManagerCandyRush" preserve="all" />
     <type fullname="GameModeManagerCTF" preserve="all" />
     <type fullname="GameModeManagerFlagHolder" preserve="all" />
     <type fullname="GameModeManagerLootCollector" preserve="all" />
@@ -80,6 +87,7 @@
     <type fullname="ObjectPooler" preserve="all" />
     <type fullname="OffsetScrolling" preserve="all" />
     <type fullname="OnlinePresenceUI" preserve="all" />
+    <type fullname="ParticleCollisionSound" preserve="all" />
     <type fullname="ParticleSystemActions" preserve="all" />
     <type fullname="PauseScreen" preserve="all" />
     <type fullname="Photon.Pun.UtilityScripts.PhotonTeamsManager" preserve="all" />
@@ -105,6 +113,7 @@
     <type fullname="SnowArenaGlowPulse" preserve="all" />
     <type fullname="SpawnManager" preserve="all" />
     <type fullname="SpawnPoint" preserve="all" />
+    <type fullname="SpawnPointPlacer" preserve="all" />
     <type fullname="SpecialLootboxManager" preserve="all" />
     <type fullname="StarrySkyStaticParticleSystem" preserve="all" />
     <type fullname="SteeringWheelMove" preserve="all" />
@@ -214,6 +223,7 @@
     <type fullname="UnityEngine.AI.NavMeshObstacle" preserve="all" />
   </assembly>
   <assembly fullname="UnityEngine.AnimationModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="UnityEngine.Animation" preserve="all" />
     <type fullname="UnityEngine.AnimationClip" preserve="all" />
     <type fullname="UnityEngine.Animator" preserve="all" />
     <type fullname="UnityEngine.Avatar" preserve="all" />

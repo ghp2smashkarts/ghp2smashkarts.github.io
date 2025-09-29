@@ -11,7 +11,7 @@ function onAuthStateChanged(user) {
     {
       if(window.customAuthToken != null)
       {
-        signInWithCustomToken(window.customAuthToken);
+        signInWithCustomToken(window.customAuthToken, true);
       }
       else
       {
@@ -27,12 +27,14 @@ function onAuthStateChanged(user) {
   firstLoad = false;
 }
 
-function signInWithCustomToken(token)
+function signInWithCustomToken(token, sendAuthDataToUnity = false)
 {
   firebase.auth().signInWithCustomToken(token)
   .then((userCredential) => {
     console.log("signInWithCustomToken Success");
-    sendAuthDataToUnity();
+    
+    if(sendAuthDataToUnity)
+        sendAuthDataToUnity();
   })
   .catch(function(error)
   {
@@ -49,6 +51,46 @@ function signInAnonymously()
     console.log("error logging in " + errorCode);
     console.error(error);
   });
+}
+
+function signInWithCrazyGames()
+{
+  if (window.CrazyGames.SDK.user.isUserAccountAvailable)
+  {
+    // call async function wrapper
+    (async function ()
+    {
+      try
+      {
+        const token = await window.CrazyGames.SDK.user.getUserToken();
+
+        const jsonDataStr = JSON.stringify({
+          "cgUserToken": token
+        });
+
+        callCloudFunction("signInWithCrazyGames", jsonDataStr, `signInWithCrazyGames_${Date.now()}`, (gameResponse) =>
+        {
+          //success
+          signInWithCustomToken(gameResponse.data.customToken);
+
+        }, (errMsg) =>
+        {
+          //error
+          console.error(`signInWithCrazyGames error: ${errMsg}`);
+        });
+      }
+      catch (err)
+      {
+        console.log("Caught signInWithCrazyGames error: ", err);
+      }
+    })();
+  }
+  else
+  {
+    const errMsg = "CG: isUserAccountAvailable is false"; 
+    console.log(errMsg);
+    window.unityGame.SendMessage(unityFirebaseGameOjbectName, "firebaseSignInWithEmailFailed", errMsg);
+  }
 }
 
 function signInWithEmail(email, password)
@@ -239,14 +281,30 @@ function linkOrSignInWithDiscord(scope)
         {
           clearInterval(popupClosedInterval);
 
-          const response = await fetch(`${discordLoginCFUrl}?code=${event.data.discordLoginCode}&redirect_uri=${discordLoginRedirectUrl}&existingFBId=${firebase.auth().currentUser.uid}`, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
+          const jsonDataStr = JSON.stringify({
+            "code": event.data.discordLoginCode,
+            "redirect_uri": discordLoginRedirectUrl
           });
 
-          const {customToken: customFBToken} = await response.json();
+          callCloudFunction("discordSignIn", jsonDataStr, `discordSignIn_${Date.now()}`, (gameResponse) =>
+          {
+            //success
+            const customToken = gameResponse.data["customToken"];
 
-          signInWithCustomToken(customFBToken);
+            if(customToken)
+            {
+              signInWithCustomToken(customToken);
+            }
+            else
+            {
+              console.error(`linkOrSignInWithDiscord customToken not found`);
+            }
+
+          }, (errMsg) =>
+          {
+            //error
+            console.error(`linkOrSignInWithDiscord error: ${errMsg}`);
+          });
         }
       });
     }
@@ -292,96 +350,54 @@ function sendPasswordResetEmail(emailAddress)
 // use this to limit retry attempts to reload when it fails due to race condition
 let firstLoadFailUD;
 let firstLoadFailUDRO;
-function getValueTT(nodeKey)
-{
-  const RETRY_DELAY_MS = 1000;
-  const dbRef = firebase.database().ref();
-  dbRef.child(nodeKey).once('value').then((snapshot) => {
-    if (snapshot.exists())
-    {
-      var valJsonStr = JSON.stringify(snapshot.val());
-      SendDataToUnity("OnGetValueSuccess", nodeKey, valJsonStr);
-    }
-    else
-    {
-      window.unityGame.SendMessage(unityFirebaseGameOjbectName, "OnGetValueEmptySuccess", nodeKey);
-    }
-  }).catch((error) =>
-  {
-    window.unityGame.SendMessage(unityFirebaseGameOjbectName, "OnGetValueError", nodeKey, error.message);
-    console.error(error);
 
-    // Retry only on specific transient error
-    if (error.code === "PERMISSION_DENIED" || error.message.includes("permission_denied"))
-    {
-      // failed to get a value with permission denied error
-      // this may be hacking
-      // or it could be the first time loading hang bug
-      // in that case we want to retry the load once, but only for ud and udro nodes
-      // to do this we will cache the node keys for them separately
-      // if they are yet undefined, we will retry once
-
-      const platform = isMobile()? "mobile" : "desktop";
-      //console.log("platform: "+platform);
-
-      const portal = (window.location != window.parent.location ? document.referrer : document.location.href);
-      //console.log("portal: " + portal);
-      // e.g.
-      // https://smashkarts-dev.firebaseapp.com/tests/mmc/udlh17/tt-dev.html
-      const url = new URL(portal);
-      //console.log("url: " + url);
-
-      const domain = url.hostname;
-      //console.log("domain: "+domain);
-
-      const prunedDomain = domain.replace(/\./g, "-");
-      //console.log("prunedDomain: " + prunedDomain);
-
-      const fullPlatform = prunedDomain + "-" +platform;
-      //console.log("fullPlatform: " + fullPlatform);
-
-      const isUD = nodeKey.startsWith("users/") && nodeKey.endsWith("/ud");
-      const isUDRO = nodeKey.startsWith("users/") && nodeKey.endsWith("/udro");
-
-      let shouldRetry = false;
-
-      if (isUD) {
-        if (!firstLoadFailUD) {
-          firstLoadFailUD = nodeKey;
-          shouldRetry = true;
-          console.warn(`Caching firstLoadFailUD and retrying: ${nodeKey}`);
-          dbRef.child(`debug/loadStats/${firebase.auth().currentUser.uid}/${fullPlatform}/ud/failCount`).set(firebase.database.ServerValue.increment(1));
+function getValueTT(nodeKey) {
+    const RETRY_DELAY_MS = 1000;
+    const dbRef = firebase.database().ref();
+    dbRef.child(nodeKey).once('value').then((snapshot) => {
+        if (snapshot.exists()) {
+            var valJsonStr = JSON.stringify(snapshot.val());
+            SendDataToUnity("OnGetValueSuccess", nodeKey, valJsonStr);
         } else {
-          console.warn(`Already cached firstLoadFailUD. Not retrying again.`);
-          // how can we know this is the fail we are expecting? and not just a fail at a different point in the apps life cycle?
-          dbRef.child(`debug/loadStats/${firebase.auth().currentUser.uid}/${fullPlatform}/ud/retryFailCount`).set(firebase.database.ServerValue.increment(1));
+            window.unityGame.SendMessage(unityFirebaseGameOjbectName, "OnGetValueEmptySuccess", nodeKey);
         }
-      }
-      else if (isUDRO)
-      {
-        if (!firstLoadFailUDRO)
-        {
-          firstLoadFailUDRO = nodeKey;
-          shouldRetry = true;
-          console.warn(`Caching firstLoadFailUDRO and retrying: ${nodeKey}`);
-          dbRef.child(`debug/loadStats/${firebase.auth().currentUser.uid}/${fullPlatform}/udro/failCount`).set(firebase.database.ServerValue.increment(1));
-        }
-        else
-        {
-          console.warn(`Already cached firstLoadFailUDRO. Not retrying again.`);
-          dbRef.child(`debug/loadStats/${firebase.auth().currentUser.uid}/${fullPlatform}/udro/retryFailCount`).set(firebase.database.ServerValue.increment(1));
-        }
-      }
+    }).catch((error) => {
+        SendDataToUnity(unityFirebaseGameOjbectName, "OnGetValueError", nodeKey, error.message);
+        console.error(error);
 
-      if (shouldRetry) {
-        const logPath = `debug/loadStats/${firebase.auth().currentUser.uid}/${fullPlatform}/${isUD ? "ud" : "udro"}/retryCount`;
-        dbRef.child(logPath).set(firebase.database.ServerValue.increment(1));
+        // Retry only on specific transient error
+        if (error.code === "PERMISSION_DENIED" || error.message.includes("permission_denied")) {
+            // failed to get a value with permission denied error, this may be hacking, or it could be the first time loading hang bug.
+            // in that case we want to retry the load once, but only for ud and udro nodes, to do this we will cache the node keys for them separately, if they are yet undefined, we will retry once.
+            const platform = isMobile() ? "mobile" : "desktop";
+            const portal = (window.location != window.parent.location ? document.referrer : document.location.href);
+            const url = new URL(portal);
+            const domain = url.hostname;
+            const prunedDomain = domain.replace(/\./g, "-");
+            const fullPlatform = prunedDomain + "-" + platform;
 
-        setTimeout(() => getValueTT(nodeKey), RETRY_DELAY_MS);
-        return;
-      }
-    }
-  });
+            const isUD = nodeKey.startsWith("users/") && nodeKey.endsWith("/ud");
+            const isUDRO = nodeKey.startsWith("users/") && nodeKey.endsWith("/udro");
+
+            let shouldRetry = false;
+
+            if (isUD) {
+                if (!firstLoadFailUD) {
+                    firstLoadFailUD = nodeKey;
+                    shouldRetry = true;
+                }
+            } else if (isUDRO) {
+                if (!firstLoadFailUDRO) {
+                    firstLoadFailUDRO = nodeKey;
+                    shouldRetry = true;
+                }
+            }
+            if (shouldRetry) {
+                setTimeout(() => getValueTT(nodeKey), RETRY_DELAY_MS);
+                return;
+            }
+        }
+    });
 }
 
 function SendDataToUnity(functionName, nk, ds)
@@ -396,11 +412,11 @@ function SendDataToUnity(functionName, nk, ds)
 }
 
 
-function SendResponseToUnity(functionName, k, resonseData)
+function SendResponseToUnity(functionName, k, responseData)
 {
-  resonseData["key"] = k;
+  responseData["key"] = k;
 
-  window.unityGame.SendMessage(unityFirebaseGameOjbectName, functionName, JSON.stringify(resonseData));
+  window.unityGame.SendMessage(unityFirebaseGameOjbectName, functionName, JSON.stringify(responseData));
 }
 
 function setValueTT(nodeKey, jsonData)
@@ -459,24 +475,27 @@ var cloudFunctionFail = 0;
 var regions = ["us-central1", "us-east1", "europe-west1"];
 var lastError = "internal";
 
-async function callCloudFunction(functionId, jsonData, key)
+async function callCloudFunction(functionId, jsonData, key, onSuccess, onError, sendResponseToUnity = true)
 {
   var success = false;
-  for(var i=0;i<regions.length; i++)
+  for (var i = 0; i < regions.length; i++)
   {
-    var success = await callCloudFunctionNew(functionId, jsonData, key, regions[i], i);
-    if(success){ break; }
+    success = await callCloudFunctionNew(functionId, jsonData, key, regions[i], i, onSuccess, onError, sendResponseToUnity);
+    if (success)
+    {
+      break;
+    }
   }
 
-  if(!success)
+  if (!success && sendResponseToUnity)
   {
-    SendDataToUnity( "OnFunctionError", key, lastError);
+    SendDataToUnity("OnFunctionError", key, lastError);
   }
 }
 
-async function callCloudFunctionNew(functionId, jsonData, key, region, count)
+async function callCloudFunctionNew(functionId, jsonData, key, region, count, onSuccess, onError, sendResponseToUnity = true)
 {
-  if(firebase.auth().currentUser != null)
+  if (firebase.auth().currentUser != null)
   {
     try
     {
@@ -484,34 +503,62 @@ async function callCloudFunctionNew(functionId, jsonData, key, region, count)
       var functionRef = firebase.app().functions(region).httpsCallable(functionId + "Multi");
 
       var fbResponse = await functionRef(dataObject);
-      if(fbResponse != null)
+      if (fbResponse != null)
       {
         var gameResponse = fbResponse.data;
 
-        if(gameResponse != null)
+        if (gameResponse != null)
         {
-          SendResponseToUnity( "OnFunctionComplete", key, gameResponse);
           cloudFunctionSuccess++;
-          if(!gameResponse.result)
+
+          if (sendResponseToUnity)
           {
+            SendResponseToUnity("OnFunctionComplete", key, gameResponse);
+          }
+
+          if (!gameResponse.result)
+          {
+            if (typeof onError === 'function') 
+            {
+              onError(gameResponse.message);
+            }
+            
             logCloudFunctionError("v5-" + count + "-f", jsonData, gameResponse.debugMessage, functionId);
           }
+          else if (typeof onSuccess === 'function')
+          {
+            onSuccess(gameResponse);
+          }
+          
           return true;
         }
         else
         {
+          if (typeof onError === 'function')
+          {
+            onError("null game response");
+          }
           logCloudFunctionError("v5-" + count + "-r", "null game response", functionId);
           return false;
         }
       }
       else
       {
+        if (typeof onError === 'function')
+        {
+          onError("null FB response");
+        }
         logCloudFunctionError("v5-" + count + "-n", jsonData, "null FB response", functionId);
         return false;
       }
-    } catch (error)
+    }
+    catch (error)
     {
       cloudFunctionFail++;
+      if (typeof onError === 'function')
+      {
+        onError(error.message);
+      }
       logCloudFunctionError("v5-" + count + "-e", jsonData, error.message, functionId);
       lastError = error.message;
       return false;
@@ -651,4 +698,20 @@ function getBrowser()
 function getBrowserVisibilityState()
 {
   return document.visibilityState;
+}
+
+function getUserProviders()
+{
+  const user = firebase.auth().currentUser;
+
+  let providers = "";
+  
+  if (user) 
+  {
+    providers = user.providerData.map(p => p.providerId).join("-"); //wont include custom auth eg discord or cg
+  } 
+  
+  console.log(`getUserProviders: ${providers}`);
+  
+  return providers; 
 }
