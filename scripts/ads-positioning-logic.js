@@ -15,6 +15,7 @@ function updateAdSizes()
     if(!offCanvasAdsEnabled)
     {
       updateMainMenuBanner();
+      updateLoadingBanner();
       updateWinBanner();
       updateSpectateBanner();
     }
@@ -49,6 +50,36 @@ function updateMainMenuBanner()
       mainMenuBanner.style.transform =  `${defaultMainMenuScaleStr} ${defaultMainMenuTranslateStr}`
     }
   }
+}
+
+var loadingBanner;
+const defaultLoadingScaleStr = "scale(100%, 100%)";
+const defaultLoadingTranslateStr = "translate(0px, -50%)";
+function updateLoadingBanner()
+{
+    if(loadingBanner == null)
+    {
+        loadingBanner = document.getElementById(divIdLoadingBanner);
+    }
+
+    if(loadingBanner != null && loadingBanner.style.display !== "none")
+    {
+        var adContainerW = loadingBanner.offsetWidth;
+        var adContainerH = loadingBanner.offsetHeight;
+        var gameContainerH = gameContainer.offsetHeight;
+
+        if(adContainerH/gameContainerH > 0.75)
+        {
+            var newHeight = gameContainerH * 0.75;
+            var newScale = newHeight / adContainerH;
+            var scaleString = "scale( " + newScale + "," + newScale + ")";
+            loadingBanner.style.transform = `${scaleString} ${defaultLoadingTranslateStr}`;
+        }
+        else
+        {
+            loadingBanner.style.transform =  `${defaultLoadingScaleStr} ${defaultLoadingTranslateStr}`
+        }
+    }
 }
 
 var winBanner;
