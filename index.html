@@ -200,11 +200,11 @@
 	var sentGameInstanceStartEvent = false;
 
 	// choose the data file based on whether there's support for the ASTC texture compression format
-	var dataFile = "/54f3fb9f99b824dd69e69ff6ef25e08c.data.br";
-	var mobileDataFile = "/c9d15e41e4f3be4e8c31106ae3a76a4d.data.br";
+	var dataFile = "/d2f1844c218219812da782d8869de0de.data.br";
+	var mobileDataFile = "/19123c14d50c6d517197622d90df398f.data.br";
     
-    var addressableCatalogPath = "https://smashkartsgc.b-cdn.net/assetbundles/remote/webgl/catalog_2025.11.27.13.05.12.json";
-    var mobileAddressableCatalogPath = "https://smashkartsgc.b-cdn.net/assetbundles/remote/webgl/catalog_2025.11.27.13.06.11.json";
+    var addressableCatalogPath = "https://smashkartsgc.b-cdn.net/assetbundles/remote/webgl/catalog_2025.12.04.13.47.05.json";
+    var mobileAddressableCatalogPath = "https://smashkartsgc.b-cdn.net/assetbundles/remote/webgl/catalog_2025.12.04.13.48.19.json";
 	
 	//safety check to ensure we dont try to use the mobileDataFile if the filename hasnt been parsed during the build phase
 	if(!mobileDataFile.includes("MOBILE_DATA_FILENAME"))
@@ -228,8 +228,8 @@
 	const loaderUrl = buildUrl + "/c4ce55f6fd990c1236bc84106eb955bf.loader.js";
 	const config = {
 		dataUrl: buildUrl + dataFile,
-		frameworkUrl: buildUrl + "/ba50d3d41cc76a1d6c149e98002270e3.framework.js.br",
-		codeUrl: buildUrl + "/652120d19853a4abcc9b694631eb4b43.wasm.br",
+		frameworkUrl: buildUrl + "/7d2c7051648294ad968530a9c771c7b1.framework.js.br",
+		codeUrl: buildUrl + "/b47e5486d9c307ee46a9171359ca517b.wasm.br",
 		// #if MEMORY_FILENAME
 		//         memoryUrl: buildUrl + "/",
 		// #endif
@@ -239,7 +239,7 @@
 		streamingAssetsUrl: "StreamingAssets",
 		companyName: "TallTeam",
 		productName: "Smash Karts",
-		productVersion: "2.11.0",
+		productVersion: "2.11.1",
 	};
 
 	var mainContainer = document.querySelector("#mainContainer");
