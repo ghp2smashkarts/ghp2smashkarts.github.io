@@ -2,7 +2,7 @@
 
 ///////////////////////////
 var cgEnvDisabled;
-bannerMinRefreshDelayMillisecs = 1000 * 60; //increase time for cg to 1 min
+bannerMinRefreshDelayMillisecs = 1000 * 30; //increase time for cg to 30 secs
 
 //ad tags
 const adTagMainMenuBanner = "smashkarts-io_300x250b";
@@ -204,12 +204,12 @@ function tryShowRewardedInterstitial(unusedParam)
     }
 }
 
-function getCrazyGamesShareLinkJS(roomName, gameMode, levelName)
+function getCrazyGamesShareLinkJS(roomName, gameMode, weaponsMode, levelName)
 {
     if(cgEnvDisabled)
         return;
     
-    window.CrazyGames.SDK.game.inviteLink({ room: roomName, mode: gameMode, arena: levelName }, (error, link) => 
+    window.CrazyGames.SDK.game.inviteLink({ room: roomName, wpns: weaponsMode, mode: gameMode, arena: levelName }, (error, link) => 
     {
         if (error) 
         {
@@ -222,9 +222,9 @@ function getCrazyGamesShareLinkJS(roomName, gameMode, levelName)
     });
 }
 
-function showCrazyGamesInviteButton(roomName, gameMode, levelName)
+function showCrazyGamesInviteButton(roomName, gameMode, weaponsMode, levelName)
 {
-    window.CrazyGames.SDK.game.showInviteButton({ room: roomName, mode: gameMode, arena: levelName }, (error, link) => 
+    window.CrazyGames.SDK.game.showInviteButton({ room: roomName, mode: gameMode, wpns: weaponsMode, arena: levelName }, (error, link) => 
     {
         if (error) 
         {
