@@ -208,32 +208,19 @@ function getCrazyGamesShareLinkJS(roomName, gameMode, weaponsMode, levelName)
 {
     if(cgEnvDisabled)
         return;
-    
-    window.CrazyGames.SDK.game.inviteLink({ room: roomName, wpns: weaponsMode, mode: gameMode, arena: levelName }, (error, link) => 
-    {
-        if (error) 
-        {
-            console.log("Invite link error (callback)", error);
-        } else 
-        {
-            console.log("Invite link (callback)", link);
-            window.unityGame.SendMessage(unityFirebaseGameOjbectName, "CrazyGamesShareLinkCreated", link);
-        }
-    });
+
+    const link = window.CrazyGames.SDK.game.inviteLink({ room: roomName, wpns: weaponsMode, mode: gameMode, arena: levelName });
+    console.log("Invite link (callback)", link);
+    window.unityGame.SendMessage(unityFirebaseGameOjbectName, "CrazyGamesShareLinkCreated", link);
 }
 
 function showCrazyGamesInviteButton(roomName, gameMode, weaponsMode, levelName)
 {
-    window.CrazyGames.SDK.game.showInviteButton({ room: roomName, mode: gameMode, wpns: weaponsMode, arena: levelName }, (error, link) => 
-    {
-        if (error) 
-        {
-            console.log("Invite link error (callback)", error);
-        } else 
-        {
-            console.log("Invite link (callback)", link);
-        }
-    });
+    if(cgEnvDisabled)
+        return;
+    
+    const link = window.CrazyGames.SDK.game.showInviteButton({ room: roomName, mode: gameMode, wpns: weaponsMode, arena: levelName });
+    console.log("Invite link (callback)", link);
 }
 
 function hideCrazyGamesInviteButton()
