@@ -200,11 +200,11 @@
 	var sentGameInstanceStartEvent = false;
 
 	// choose the data file based on whether there's support for the ASTC texture compression format
-	var dataFile = "/0a2a04b7e5dd52ee0439d48e8f9600e0.data.br";
-	var mobileDataFile = "/2b5c133895cb6f2c2d641540276456fa.data.br";
+	var dataFile = "/1f6c5ebaf79475d9767fbbd5608841ef.data.br";
+	var mobileDataFile = "/c649d0316bfdd0daccbd10fbea7cd7e9.data.br";
     
-    var addressableCatalogPath = "https://smashkartsgc.b-cdn.net/assetbundles/remote/webgl/catalog_2026.02.10.11.37.02.json";
-    var mobileAddressableCatalogPath = "https://smashkartsgc.b-cdn.net/assetbundles/remote/webgl/catalog_2026.02.10.11.38.39.json";
+    var addressableCatalogFilename = "catalog_2026.03.26.14.55.00.json";
+    var mobileAddressableCatalogFilename = "catalog_2026.03.26.14.55.53.json";
 	
 	//safety check to ensure we dont try to use the mobileDataFile if the filename hasnt been parsed during the build phase
 	if(!mobileDataFile.includes("MOBILE_DATA_FILENAME"))
@@ -216,9 +216,9 @@
 		{
 			dataFile = mobileDataFile;
             
-            if(!mobileAddressableCatalogPath.includes("MOBILE_ADDRESSABLE_CATALOG_PATH"))
+            if(!mobileAddressableCatalogFilename.includes("MOBILE_ADDRESSABLE_CATALOG_FILENAME"))
             {
-                addressableCatalogPath = mobileAddressableCatalogPath;
+                addressableCatalogFilename = mobileAddressableCatalogFilename;
             }
 		}
 	}
@@ -228,8 +228,8 @@
 	const loaderUrl = buildUrl + "/c4ce55f6fd990c1236bc84106eb955bf.loader.js";
 	const config = {
 		dataUrl: buildUrl + dataFile,
-		frameworkUrl: buildUrl + "/2740fffdf580c1977b0ae63358f26164.framework.js.br",
-		codeUrl: buildUrl + "/3353f1878989e45da59bd7f26b6fbb67.wasm.br",
+		frameworkUrl: buildUrl + "/db41dda8939a6491132758ec795aaf70.framework.js.br",
+		codeUrl: buildUrl + "/aaad0df047da0a9a74c8805ad8c95c23.wasm.br",
 		// #if MEMORY_FILENAME
 		//         memoryUrl: buildUrl + "/",
 		// #endif
@@ -239,7 +239,7 @@
 		streamingAssetsUrl: "StreamingAssets",
 		companyName: "TallTeam",
 		productName: "Smash Karts",
-		productVersion: "2.12.2",
+		productVersion: "2.12.3",
 	};
 
 	var mainContainer = document.querySelector("#mainContainer");
@@ -350,9 +350,9 @@
 		aiptag.subid = val;
 	}
 
-    function getAddressableCatalogPath()
+    function getAddressableCatalogFilename()
     {
-        return addressableCatalogPath;
+        return addressableCatalogFilename;
     }
 
 </script>

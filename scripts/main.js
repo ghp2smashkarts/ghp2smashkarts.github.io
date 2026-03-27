@@ -129,10 +129,13 @@ function firebaseLogEventWithParam(eventName, p, v)
     firebase.analytics().logEvent(eventName, { [p]: v});
 }
 
-function firebaseLogEventWithParamDict(eventName, paramsDict)
+function firebaseLogEventWithParamDict(eventName, paramsDictJsonString)
 {
   if(enableFirebaseAnalytics && firebase.analytics != null)
+  {
+    var paramsDict = JSON.parse(paramsDictJsonString);
     firebase.analytics().logEvent(eventName, paramsDict);
+  }
 }
 
 var fs = false;
