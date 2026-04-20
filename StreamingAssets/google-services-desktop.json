@@ -2,7 +2,8 @@
   "project_info": {
     "project_number": "480659433590",
     "firebase_url": "https://webgltest-17af1.firebaseio.com",
-    "project_id": "webgltest-17af1"
+    "project_id": "webgltest-17af1",
+    "storage_bucket": "webgltest-17af1.appspot.com"
   },
   "client": [
     {
