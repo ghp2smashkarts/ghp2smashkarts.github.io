@@ -204,22 +204,22 @@ function tryShowRewardedInterstitial(unusedParam)
     }
 }
 
-function getCrazyGamesShareLinkJS(roomName, gameMode, weaponsMode, levelName)
+function getCrazyGamesShareLinkJS(roomName, gameMode, weaponsMode, levelName, modifierMode)
 {
     if(cgEnvDisabled)
         return;
 
-    const link = window.CrazyGames.SDK.game.inviteLink({ room: roomName, wpns: weaponsMode, mode: gameMode, arena: levelName });
+    const link = window.CrazyGames.SDK.game.inviteLink({ room: roomName, wpns: weaponsMode, mode: gameMode, arena: levelName, mdfrs: modifierMode });
     console.log("Invite link (callback)", link);
     window.unityGame.SendMessage(unityFirebaseGameOjbectName, "CrazyGamesShareLinkCreated", link);
 }
 
-function showCrazyGamesInviteButton(roomName, gameMode, weaponsMode, levelName)
+function showCrazyGamesInviteButton(roomName, gameMode, weaponsMode, levelName, modifierMode)
 {
     if(cgEnvDisabled)
         return;
     
-    const link = window.CrazyGames.SDK.game.showInviteButton({ room: roomName, mode: gameMode, wpns: weaponsMode, arena: levelName });
+    const link = window.CrazyGames.SDK.game.showInviteButton({ room: roomName, mode: gameMode, wpns: weaponsMode, arena: levelName, mdfrs: modifierMode });
     console.log("Invite link (callback)", link);
 }
 
