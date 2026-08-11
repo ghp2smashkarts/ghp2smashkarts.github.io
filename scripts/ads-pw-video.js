@@ -1,13 +1,129 @@
 'use strict';
 
-function rampVideoPlayerInitialised()
+var pwNonRewardedVideoEventListenersRegistered = false;
+var pwNonRewardedVideoPlayerReady = false;
+
+var pwSkipBtnEl = null;
+var pwSkipCountdownIntervalId = null;
+var pwSkipSecondsRemaining = 0;
+var pwSkipDelaySeconds = 10;
+var pwManuallySkipped = false;
+
+function pwGetSkipBtn()
 {
-    return rampInitialised() && ramp.settings.slots.rewarded_video !== undefined;
+    if (!pwSkipBtnEl) pwSkipBtnEl = document.getElementById("pw-video-skip-btn");
+    return pwSkipBtnEl;
+}
+
+function pwShowSkipButton()
+{
+    var btn = pwGetSkipBtn();
+    if (!btn) return;
+
+    pwManuallySkipped = false;
+    pwSkipSecondsRemaining = pwSkipDelaySeconds;
+
+    btn.disabled = true;
+    btn.textContent = "Skip in " + pwSkipSecondsRemaining;
+    btn.style.display = "block";
+
+    if (pwSkipCountdownIntervalId) clearInterval(pwSkipCountdownIntervalId);
+    pwSkipCountdownIntervalId = setInterval(function()
+    {
+        pwSkipSecondsRemaining -= 1;
+        if (pwSkipSecondsRemaining > 0)
+        {
+            btn.textContent = "Skip in " + pwSkipSecondsRemaining;
+        }
+        else
+        {
+            clearInterval(pwSkipCountdownIntervalId);
+            pwSkipCountdownIntervalId = null;
+            btn.disabled = false;
+            btn.textContent = "Skip Ad";
+        }
+    }, 1000);
+
+    btn.onclick = function()
+    {
+        if (btn.disabled) return;
+        pwManuallySkipped = true;
+        pwHideSkipButton();
+
+        try
+        {
+            if (typeof ramp !== "undefined" && typeof ramp.destroyUnits === "function")
+            {
+                ramp.destroyUnits([adUnitTypeNonRewardedVideo]);
+            }
+        }
+        catch (e)
+        {
+            console.log(`PW destroyUnits(${adUnitTypeNonRewardedVideo}) error: ${e}`);
+        }
+
+        interstitialSkipped(false);
+    };
+}
+
+function pwHideSkipButton()
+{
+    if (pwSkipCountdownIntervalId)
+    {
+        clearInterval(pwSkipCountdownIntervalId);
+        pwSkipCountdownIntervalId = null;
+    }
+    var btn = pwGetSkipBtn();
+    if (btn)
+    {
+        btn.onclick = null;
+        btn.disabled = true;
+        btn.style.display = "none";
+    }
+}
+
+window.ramp.que.push(() =>
+{
+    window.ramp.onPlayerReady = function() {
+        console.log(`PW ${adUnitTypeNonRewardedVideo} player ready`);
+        pwNonRewardedVideoPlayerReady = true;
+    };
+});
+
+function tryRegisterNonRewardedVideoEventListeners()
+{
+    if (pwNonRewardedVideoEventListenersRegistered)
+        return;
+
+    pwNonRewardedVideoEventListenersRegistered = true;
+
+    Bolt.on(adUnitTypeNonRewardedVideo, Bolt.BOLT_AD_STARTED, function()
+    {
+        console.log(`PW ${adUnitTypeNonRewardedVideo} started event`);
+        pwShowSkipButton();
+    });
+
+    Bolt.on(adUnitTypeNonRewardedVideo, Bolt.BOLT_AD_ERROR, function()
+    {
+        console.log(`PW ${adUnitTypeNonRewardedVideo} error event`);
+        if (pwManuallySkipped) { pwManuallySkipped = false; return; }
+        pwHideSkipButton();
+        interstitialError(false);
+    });
+
+    Bolt.on(adUnitTypeNonRewardedVideo, Bolt.BOLT_AD_COMPLETE, function()
+    {
+        console.log(`PW ${adUnitTypeNonRewardedVideo} complete event`);
+        if (pwManuallySkipped) { pwManuallySkipped = false; return; }
+        pwHideSkipButton();
+        interstitialComplete(false);
+    });
+
 }
 
 function showInterstitial(audioOn, interstitialType, interstitialName)
 {
-    if(!rampVideoPlayerInitialised())
+    if(!rampInitialised() || !pwNonRewardedVideoPlayerReady)
     {
         interstitialError(false);
         return;
@@ -15,89 +131,139 @@ function showInterstitial(audioOn, interstitialType, interstitialName)
 
     if (!isVideoAdPlaying && firebase.auth().currentUser != null)
     {
+        tryRegisterNonRewardedVideoEventListeners();
+
         isVideoAdPlaying = true;
 
-        var functionRef = firebase.functions().httpsCallable("getPlaywireRewardedVideoCodeNew");
-
-        functionRef(null).then((response) =>
-        {
-            window.PageOS.BUS.on('gotConfig', function(e)
-            {
-                addNonRewardedVideoStylingObserver();
-            });
-
-            var pwVideoCode = response.data.code;
-
-            if (pwVideoCode !== undefined)
-            {
-                interstitialStart(false);
-
-                setRewardedVideoMsgBoxEnabled(false);
-
-                //Note we use the rewarded video player but don't actually reward the player
-                //This is because there are issues on playwires side if we use both the rewarded and nonrewarded video players
-                ramp.showRewardedVideo({
-                    userId: getCurrentUserId(),
-                    code: pwVideoCode,
-                    callback: (response) =>
-                    {
-                        isVideoAdPlaying = false;
-
-                        ramp.closeRewardedVideo();
-                        
-                        interstitialComplete(false);
-                    }
-                });
-            }
-            else
-            {
-                isVideoAdPlaying = false;
-
-                interstitialError(false);
-            }
-
-        }).catch((error) =>
-        {
-            isVideoAdPlaying = false;
-
-            interstitialError(false);
-            
-            var key = `getPlaywireRewardedVideoCodeNew_NonRewarded_${Date.now()}`;
-
-            SendDataToUnity("OnFunctionError", key, error.message);
-        });
+        ramp.spaAddAds([{ type: adUnitTypeNonRewardedVideo }]);
     }
 }
 
-const boltRewardedVideoPlayerId = "tyche_precontent_player";
+var pwRewardedVideoEventListenersRegistered = false;
+var rewardGranted = false;
+
+function tryRegisterRewardedVideoEventListeners()
+{
+    if (pwRewardedVideoEventListenersRegistered)
+        return;
+
+    pwRewardedVideoEventListenersRegistered = true;
+
+    window.addEventListener("rewardedAdVideoRewardReady", () =>
+    {
+        console.log("PW rewarded Ad is ready to play!");
+        pwRewardedAvailable = true;
+        pwRewardedVideoPrefetching = false;
+        rewardGranted = false;
+        window.unityGame.SendMessage(unityFirebaseGameOjbectName, "RewardedInterstitialAvailable");
+    });
+
+    window.addEventListener("userAcceptsRewardedAd", () =>
+    {
+        console.log("PW userAcceptsRewardedAd - User clicked to begin watching an ad");
+        rewardGranted = false;
+        interstitialStart(true);    
+    });
+
+    window.addEventListener("rewardedAdCompleted", () =>
+    {
+        console.log("PW rewardedAdCompleted - watched full ad");    
+        interstitialComplete(rewardGranted);
+        rewardGranted = false;
+    });
+
+    window.addEventListener("rewardedAdRewardGranted", () =>
+    {
+        console.log("PW rewardedAdRewardGranted - User watched enough to earn a reward");
+        rewardGranted = true;
+    });
+
+    window.addEventListener("rewardedCloseButtonTriggered", () =>
+    {
+        console.log("PW rewardedCloseButtonTriggered - User closed the ad early");
+        if(!rewardGranted)
+            interstitialSkipped(true);
+    });
+
+    window.addEventListener("userClosedWithRewardCanResolve", () =>
+    {
+        console.log("PW userClosedWithRewardCanResolve - User closed the ad after qualifying for the reward");
+        interstitialComplete(rewardGranted);
+        rewardGranted = false;
+    });
+
+    window.addEventListener("rejectAdCloseCta", () =>
+    {
+        console.log("PW rejectAdCloseCta - User closed the call-to-action prompt");
+        interstitialSkipped(true);
+    });
+
+    window.addEventListener("rewardedAdConfirmClose", () =>
+    {
+        console.log("PW rewardedAdConfirmClose - Confirmation modal was closed");
+        interstitialSkipped(true);
+    });
+}
 
 function tryInitRewardedInterstitial(audioOn)
 {
-    if(!window.adblockDetected)
+    if (window.adblockDetected)
     {
-        if(rampVideoPlayerInitialised())
+        console.log("Adblock detected, not initializing rewarded interstitial");
+        return;
+    }
+
+    if (!rampInitialised())
+    {
+        console.log("Ramp not initialised, cannot initialize rewarded interstitial");
+        return;
+    }   
+
+    if (pwRewardedAvailable || pwRewardedVideoPrefetching)
+    {
+        //Already available or prefetching, notify unity
+        window.unityGame.SendMessage(unityFirebaseGameOjbectName, "RewardedInterstitialAvailable");
+        return;
+    }
+
+    tryRegisterRewardedVideoEventListeners();
+
+    //Prefetch rewarded video unit
+    pwRewardedVideoPrefetching = true;
+
+    window.ramp.que.push(() =>
+    {
+        if (rampCurrDisplayedAdTypes.length === 0)
         {
-            window.unityGame.SendMessage(unityFirebaseGameOjbectName, "RewardedInterstitialAvailable");
+            rampCurrDisplayedAdTypes.push(adUnitTypeRewardedVideo);
+            
+            window.ramp.spaAds({
+                ads: [{type: adUnitTypeRewardedVideo}],
+                countPageView: false,
+            }).catch((e) =>
+            {
+                console.log(`error tryInitRewardedInterstitial spaAds. error: ${e}`);
+                pwRewardedAvailable = false;
+                pwRewardedVideoPrefetching = false;
+            });
         }
         else
         {
-            //poll until video player is ready
-            const checkVideoPlayerInterval = setInterval(() => {
-                //player isnt ready => do nothing
-                if (!rampVideoPlayerInitialised())
-                    return;
+            rampCurrDisplayedAdTypes.push(adUnitTypeRewardedVideo);
 
-                //player is ready => stop polling and send message to unity
-                clearInterval(checkVideoPlayerInterval);
-                window.unityGame.SendMessage(unityFirebaseGameOjbectName, "RewardedInterstitialAvailable");
-            }, 1000);
+            window.ramp.spaAddAds([{type: adUnitTypeRewardedVideo}]).catch((e) =>
+            {
+                console.log(`error tryInitRewardedInterstitial spaAddAds. error: ${e}`);
+                pwRewardedAvailable = false;
+                pwRewardedVideoPrefetching = false;
+            });
         }
-    }
+    });
 }
 
 function tryShowRewardedInterstitial(audioOn)
 {
-    if(!rampVideoPlayerInitialised())
+    if (!rampInitialised() || !pwRewardedAvailable)
     {
         interstitialNoFill(true);
         return;
@@ -106,145 +272,26 @@ function tryShowRewardedInterstitial(audioOn)
     if (!isVideoAdPlaying && firebase.auth().currentUser != null)
     {
         isVideoAdPlaying = true;
+        //pwRewardedAvailable = false; //next ad will be prefetched automatically from C#
 
-        var functionRef = firebase.functions().httpsCallable("getPlaywireRewardedVideoCodeNew");
-
-        functionRef(null).then((response) =>
-        {
-            var pwVideoCode = response.data.code;
-
-            if (pwVideoCode !== undefined)
+        ramp.manuallyCreateRewardUi({skipConfirmation: true})
+            .then(() =>
             {
-                interstitialStart(true);
-
-                setRewardedVideoMsgBoxEnabled(true);
-
-                ramp.showRewardedVideo({
-                    userId: getCurrentUserId(),
-                    code: pwVideoCode,
-                    callback: (response) =>
-                    {
-                        isVideoAdPlaying = false;
-
-                        ramp.closeRewardedVideo();
-
-                        //patch fix: removed check for rewardUser as it wasnt been set when displaying static fallback ads when rewarded video fill was unavailable 
-                        //also it isnt neede as we only use this call for rewarded videos
-                        //if(response.adPlayed && response.rewardUser) 
-                        if(response.adPlayed)
-                        {
-                            interstitialComplete(true);
-                        }
-                        else
-                        {
-                            interstitialNoFill(true);
-                        }
-                    }
-                });
-            }
-            else
-            {
-                isVideoAdPlaying = false;
-
-                interstitialError(true);
-            }
-
-        }).catch((error) =>
-        {
-            isVideoAdPlaying = false;
-
-            interstitialError(true);
-
-            var key = `getPlaywireRewardedVideoCodeNew_${Date.now()}`;
-
-            SendDataToUnity("OnFunctionError", key, error.message);
-        });
-    }
-}
-
-const rewardedVideoMsgBoxId = "tyche_msg_box";
-var rewardedVideoMsgBox;
-
-function setRewardedVideoMsgBoxEnabled(enabled)
-{
-    if(rewardedVideoMsgBox == null)
-    {
-        rewardedVideoMsgBox = document.getElementById(rewardedVideoMsgBoxId);
-    }
-
-    if(rewardedVideoMsgBox !== null && rewardedVideoMsgBox.style !== null)
-    {
-        rewardedVideoMsgBox.style.display = enabled ? "block" : "none";
-    }
-}
-
-function addNonRewardedVideoStylingObserver()
-{
-    const targetNode = document.getElementById('ramp_rewarded_container');
-
-    const boxconfig = { attributes: true, childList: true, subtree: true };
-
-    const callback = function (mutationList, observer)
-    {
-        for (const mutation of mutationList)
-        {
-            mutation.addedNodes.forEach(addedNode =>
-            {
-                var styleNode = document.querySelector('#tyche_msg_box + div')
-                if (styleNode.style.height)
-                {
-                    styleNode.style = 'width: 100%; height: 100vh; border: 4px solid rgba(255, 255, 255, 0.2); box-sizing: border-box;'
-                }
+                console.log("tryShowRewardedInterstitial (PW) - Reward granted");            
             })
-        }
-    };
+            .catch((error) =>
+            {
+                console.error("tryShowRewardedInterstitial (PW) Error:", error);
+                isVideoAdPlaying = false;            
 
-    const msgBoxObserver = new MutationObserver(callback);
-    msgBoxObserver.observe(targetNode, boxconfig);
+                if(error.includes("There is no rewarded ad available"))
+                {
+                    interstitialNoFill(true);
+                }   
+                else
+                {
+                    interstitialError(true);
+                }
+            });
+    }
 }
-
-//--------- OLD NON REWARDED PLAYWIRE VIDEO PLAYER START ------------
-
-// const boltInterstitialVideoPlayerId = "tyche_trendi_video";
-// var rampPathPreInterstital;
-
-// function showInterstitial(audioOn, interstitialType, interstitialName)
-// {
-//     rampPathPreInterstital = rampCurrPath;
-
-//     rampChangePathWrapper("roundendvid");
-
-//     //vid container
-//     var pwVideoContainer = document.getElementById("pw-video-container");
-//     pwVideoContainer.style.display = "block";
-
-//     window.PageOS.BUS.on('gotConfig', function(e)
-//     {
-//         trySetupBoltCallbacks();
-//     });
-// }
-
-// function trySetupBoltCallbacks()
-// {
-//     if (typeof Bolt !== 'undefined')
-//     {
-//         Bolt.on(boltInterstitialVideoPlayerId, Bolt.BOLT_CONTENT_COMPLETE, hideInterstitial);
-//         Bolt.on(boltInterstitialVideoPlayerId, Bolt.BOLT_AD_COMPLETE, hideInterstitial);
-//     }
-// }
-
-// function hideInterstitial()
-// {
-//     if (typeof Bolt !== 'undefined')
-//     {
-//         Bolt.removeVideo(boltInterstitialVideoPlayerId, true);
-//     }
-
-//     rampChangePathWrapper(rampPathPreInterstital);
-
-//     //vid container
-//     var pwVideoContainer = document.getElementById("pw-video-container");
-//     pwVideoContainer.style.display = "none";
-// }
-
-//--------- OLD NON REWARDED PLAYWIRE VIDEO PLAYER END ------------

@@ -88,7 +88,8 @@
 	<link rel="stylesheet" href="css/main.css" />
 	<meta name="viewport" content="minimal-ui, user-scalable=no, initial-scale=1, maximum-scale=1, width=device-width, viewport-fit=cover" />
 
-	<script src="scripts/ads-init.js"></script>	
+	<script src="scripts/ads-ab-test.js"></script>
+	<script src="scripts/ads-init.js"></script>
 </head>
 
 <body>
@@ -101,6 +102,9 @@
 		<!-- On canvas ad containers -->
 		<div id="adContainerLoadingLeft"> <!-- loading -->
 			<div id="smashkarts-io_300x600_2"></div> <!-- adinplay -->
+
+			<!-- playwire -->
+			<div id="pw_loading"></div>
 		</div>
 		<div id="adContainerMainMenu"> <!-- main menu -->
 			<div id="smashkarts-io_300x250"></div> <!-- adinplay -->
@@ -108,7 +112,7 @@
 			<!-- playwire -->
 			<div id="pw_mainmenu"></div>
 			<!-- dummy placement to ensure rewarded videos init correctly when ads are disabled for season pass holders -->
-			<div id="pw_mainmenu_dummy" data-pw-desk="med_rect_atf" data-pw-mobi="med_rect_atf"></div>
+			<div id="pw_mainmenu_dummy"></div>
 		</div>
 		<div id="adContainerWin"> <!-- win ceremony -->
 			<div id="smashkarts-io_300x250_2"></div> <!-- adinplay -->
@@ -119,6 +123,9 @@
 		</div>
 		<div id="adContainerSpectate"> <!-- spectate -->
 			<div id="smashkarts-io_300x250_3"></div> <!-- adinplay -->
+
+			<!-- playwire -->
+			<div id="pw_spectate"></div>
 		</div>
 		<div id="adContainerDeath"> <!-- death -->
 
@@ -132,8 +139,9 @@
 		</div>
 	</div>
 	<div id="pw-video-container"> <!-- playwire -->
-		<div id="pw-video-placeholder"></div>
+		<div id="pw_video_placeholder"></div>
 	</div>
+	<button id="pw-video-skip-btn" type="button" disabled>Skip in 10s</button>
 	<div id="preroll"></div> <!-- adinplay -->
 	<iframe id="xsolla-iframe"></iframe>
 </div>
@@ -200,11 +208,11 @@
 	var sentGameInstanceStartEvent = false;
 
 	// choose the data file based on whether there's support for the ASTC texture compression format
-	var dataFile = "/a7d5caeffb5abc38782191481e08269e.data.br";
-	var mobileDataFile = "/50a87ce75e708e3c8c2e7139e3daf129.data.br";
+	var dataFile = "/4c440b9c21c4ace64b2e66c9bb3ab62a.data.br";
+	var mobileDataFile = "/aa7adf7e315608a163c387517dce08e0.data.br";
     
-    var addressableCatalogFilename = "catalog_2026.06.17.10.49.23.json";
-    var mobileAddressableCatalogFilename = "catalog_2026.06.17.10.50.43.json";
+    var addressableCatalogFilename = "catalog_2026.08.10.17.49.30.json";
+    var mobileAddressableCatalogFilename = "catalog_2026.08.10.17.50.39.json";
 	
 	//safety check to ensure we dont try to use the mobileDataFile if the filename hasnt been parsed during the build phase
 	if(!mobileDataFile.includes("MOBILE_DATA_FILENAME"))
@@ -228,8 +236,8 @@
 	const loaderUrl = buildUrl + "/c4ce55f6fd990c1236bc84106eb955bf.loader.js";
 	const config = {
 		dataUrl: buildUrl + dataFile,
-		frameworkUrl: buildUrl + "/90d8a8a21b10f0eacd6e01909045d69c.framework.js.br",
-		codeUrl: buildUrl + "/076b2a1f83dd369b72bc5108c114efec.wasm.br",
+		frameworkUrl: buildUrl + "/61b8b2152f023e8f1fdbad65d47e31e1.framework.js.br",
+		codeUrl: buildUrl + "/820733830cecbf49045dd4324cc599a2.wasm.br",
 		// #if MEMORY_FILENAME
 		//         memoryUrl: buildUrl + "/",
 		// #endif
@@ -239,7 +247,7 @@
 		streamingAssetsUrl: "StreamingAssets",
 		companyName: "TallTeam",
 		productName: "Smash Karts",
-		productVersion: "2.14.1",
+		productVersion: "2.15.0",
 	};
 
 	var mainContainer = document.querySelector("#mainContainer");
@@ -308,6 +316,11 @@
 		//tell unity what ad providers are enabled
 		window.unityGame.SendMessage(unityFirebaseGameOjbectName, "SetDisplayAdProvider", displayAdProvider);
 		window.unityGame.SendMessage(unityFirebaseGameOjbectName, "SetVideoAdProvider", videoAdProvider);
+
+		//log AB test assignment to analytics
+		if (abTestSelectedProvider) {
+			window.unityGame.SendMessage(unityFirebaseGameOjbectName, "OnJSABTestLoaded", abTestSelectedProvider);
+		}
 		
 		trySendAdBlockDetectedMessage();
 	}

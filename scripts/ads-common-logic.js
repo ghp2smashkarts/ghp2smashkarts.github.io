@@ -262,21 +262,6 @@ function showLoadingBanner()
 }
 
 //Used by playwire to ensure everything still gets initialised correctly for season pass holders 
-function showDummyMainMenuBanner()
-{
-  if(!offCanvasAdsEnabled)
-  {
-    hideWinCeremonyBanner();
-    hideLongBanner();
-    hideMainMenuBanner();
-    hideSpectateBanner();
-
-    showAdContainer(divIdMainMenuBanner);
-
-    requestDummyMainMenuAd();
-  }
-}
-
 function hideMainMenuBanner()
 {
   if(!offCanvasAdsEnabled)

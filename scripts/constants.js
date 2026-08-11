@@ -13,8 +13,15 @@ const AdProviderPlaywire = "Playwire";
 const AdProviderGoogleH5Games = "GoogleH5Games";
 const AdProviderAdinplay = "AdinPlay";
 const AdProviderDummy = "None";
-var displayAdProvider = AdProviderAdinplay;
-var videoAdProvider = AdProviderAdinplay;
+var displayAdProvider = AdProviderPlaywire;
+var videoAdProvider = AdProviderPlaywire;
+
+//AB Test: provider weight map (relative weights, not percentages)
+//e.g. { "Playwire": 50, "AdinPlay": 50 } = 50/50 split
+//e.g. { "Playwire": 70, "AdinPlay": 30 } = 70/30 split
+//Set a single provider to 100 to disable the AB test
+var adProviderWeights = { "Playwire": 50, "AdinPlay": 50 };
+var abTestSelectedProvider = null;
 
 var playwireRampInitialised = false;
 

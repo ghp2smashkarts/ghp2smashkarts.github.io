@@ -160,6 +160,36 @@ body {
     }
 }
 
+#pw-video-skip-btn {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    z-index: 2147483647;
+
+    min-width: 120px;
+    padding: 10px 16px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    border-radius: 6px;
+    cursor: pointer;
+
+    display: none;
+}
+
+#pw-video-skip-btn:disabled {
+    cursor: default;
+    opacity: 0.75;
+}
+
+#pw-video-skip-btn:not(:disabled):hover {
+    background: rgba(0, 0, 0, 0.9);
+    border-color: #fff;
+}
+
 @media screen and (max-width: 600px) {
     #smashkarts-io_300x250_2 {
         /* border: 1px solid blue; */

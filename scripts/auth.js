@@ -372,13 +372,39 @@ function signOut() {
     });
 }
 
-function sendAuthDataToUnity() {
+async function hashSHA256(str) {
+    const data = new TextEncoder().encode(str);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function updatePlaywireUserProfile(user) {
+    if (!user || user.isAnonymous || !user.email) return;
+    if (!window.ramp || typeof window.ramp.setUserProfile !== 'function') return;
+
+    var normalizedEmail = user.email.trim().toLowerCase();
+    var sha256Hash = await hashSHA256(normalizedEmail);
+
+    window.ramp.setUserProfile({
+        format: 'UUP1',
+        heid: {
+            sha256: sha256Hash
+        }
+    });
+}
+
+async function sendAuthDataToUnity() 
+{
     if (window.unityGame != null && firebase.auth().currentUser != null) {
+        await checkAndRestoreUserArchive();
         var firebaseUid = firebase.auth().currentUser.uid;
         var isAnon = firebase.auth().currentUser.isAnonymous;
         var data = { authToken: "", uid: firebaseUid, isAnonymous: isAnon };
         var dataJson = JSON.stringify(data);
         window.unityGame.SendMessage(unityFirebaseGameOjbectName, 'SetAuthToken', dataJson);
+
+        updatePlaywireUserProfile(firebase.auth().currentUser);
     }
 }
 
@@ -525,6 +551,15 @@ async function callCloudFunction(functionId, jsonData, key, onSuccess, onError, 
 
     if (!success && sendResponseToUnity) {
         SendDataToUnity("OnFunctionError", key, lastError);
+    }
+}
+
+async function checkAndRestoreUserArchive() {
+    try {
+        // callCloudFunction auto-appends "Multi" -> checkAndRestoreArchiveMulti
+        await callCloudFunction("checkAndRestoreArchive", "{}", "checkAndRestoreArchive", null, null, false);
+    } catch (e) {
+        console.warn("checkAndRestoreUserArchive failed (non-fatal):", e);
     }
 }
 

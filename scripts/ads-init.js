@@ -7,99 +7,40 @@ let adConfig;
 //PLAYWIRE
 if(isPlaywireEnabled())
 {
-    //PLAYWIRE RAMP v1.0
-    // var ramp = {config: '//config.playwire.com/1024690/v2/websites/73592/banner.json' };
-    //
-    // var playwireScript = document.createElement("script");
-    // playwireScript.id = "ramp";
-    // playwireScript.type = "text/javascript";
-    // playwireScript.async = true;
-    // playwireScript.src = "//cdn.intergient.com/ramp.js";
-    // document.head.appendChild(playwireScript);
-
-    //PLAYWIRE RAMP v2.0
+    //PLAYWIRE RAMP v3.0 (Ads API)
     window.ramp = window.ramp || {};
     window.ramp.que = window.ramp.que || [];
     window.ramp.passiveMode = true;
-    window.ramp.onReady = function()
-    {
-        playwireRampInitialised = true;
 
-        //ads stealing focus bugfix
-        const handleSlotRenderEnded = () => {
-            let hasFocus = true;
-            let intervalId;
+    function getPlaywireWebsiteId() {
+        var hostname = window.location.hostname;
+        var referrerHostname = '';
+        try {
+            if (document.referrer) referrerHostname = new URL(document.referrer).hostname;
+        } catch(e) {}
 
-            const handleBlur = () => {
-                hasFocus = false;
-            };
-
-            const handleFocus = () => {
-                hasFocus = true;
-            };
-
-            window.addEventListener('blur', handleBlur);
-            window.addEventListener('focus', handleFocus);
-
-            intervalId = setInterval(() => {
-                if (!hasFocus) {
-                    window.focus();
-                    clearInterval(intervalId);
-                    window.removeEventListener('blur', handleBlur);
-                    window.removeEventListener('focus', handleFocus);
-                } else {
-                    clearInterval(intervalId);
-                    window.removeEventListener('blur', handleBlur);
-                    window.removeEventListener('focus', handleFocus);
-                }
-            }, 1000);
-        };
-
-        window.googletag.pubads().addEventListener('slotRenderEnded', handleSlotRenderEnded);
-    };
-
-    window._pwGA4PageviewId = ''.concat(Date.now());
-    window.dataLayer = window.dataLayer || [];
-    window.gtag = window.gtag || function () {
-        dataLayer.push(arguments);
-    };
-    gtag('js', new Date());
-    gtag('config', 'G-F2WLE0BJLM', { 'send_page_view': false, 'cookie_flags': 'samesite=none;secure' });
-    gtag(
-        'event',
-        'ramp_js',
-        {
-            'send_to': 'G-F2WLE0BJLM',
-            'pageview_id': window._pwGA4PageviewId
-        }
-    );
+        if (hostname.includes('geometrykarts.com') || referrerHostname.includes('geometrykarts.com')) return '77835';
+        if (hostname.includes('skunblocked.com')   || referrerHostname.includes('skunblocked.com'))   return '77836';
+        
+        //schoolkarts.com is just an iframe of smashkarts.io so no need to have a separate website id for it, just use the default one
+        //if (hostname.includes('schoolkarts.com')   || referrerHostname.includes('schoolkarts.com'))   return '77834';
+        
+        return '73592'; // default: smashkarts.io
+    }
 
     var playwireScript = document.createElement("script");
     playwireScript.type = "text/javascript";
     playwireScript.async = true;
-    playwireScript.src = "//cdn.intergient.com/1024690/73592/ramp.js";
-    document.head.appendChild(playwireScript);
-
-    //PLAYWIRE PRECONNECTS
-    addPreconnectLink("https://cdn.intergi.com", true);
-    addPreconnectLink("https://cdn.intergient.com", true);
-    addPreconnectLink("https://securepubads.g.doubleclick.net", true);
-    addPreconnectLink("https://cdn.playwire.com", true);
-    addPreconnectLink("https://z.moatads.com", true);
-
-    function addPreconnectLink(preconnectUrl, crossOriginEnabled)
+    playwireScript.src = "//cdn.intergient.com/1024690/" + getPlaywireWebsiteId() + "/ramp.js";
+    playwireScript.onload = () =>
     {
-        var link = document.createElement('link');
-        link.rel = 'preconnect';
-        link.href = preconnectUrl;
-
-        if(crossOriginEnabled)
-        {
-            link.crossOrigin = 'anonymous';
-        }
-
-        document.head.appendChild(link);
-    }
+        playwireRampInitialised = true;
+    };
+    document.addEventListener("DOMContentLoaded", function ()
+    {
+        const body = document.querySelector("body");
+        body.appendChild(playwireScript);
+    });
 }
 
 //ADINPLAY

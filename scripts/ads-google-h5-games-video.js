@@ -23,7 +23,7 @@ function showInterstitial(unusedParam, interstitialType, interstitialName)
 
 var onShowRewardedVideoClicked = null;
 
-function tryInitRewardedInterstitial(unusedParam)
+function tryInitRewardedInterstitial(audioOn)
 {
     if(typeof adBreak === "function")
     {

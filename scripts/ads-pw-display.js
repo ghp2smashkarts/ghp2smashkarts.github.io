@@ -1,100 +1,135 @@
 'use strict';
 
-function hideAllAdUnits()
+// IAB units get an incrementing numeric suffix on each re-add (e.g. standard_iab_rght1 → standard_iab_rght12 → standard_iab_rght13).
+// This resolves the actual current element ID so destroyUnits can find it.
+function getActualUnitId(baseType)
+{
+    const el = document.querySelector(`[id^="${baseType}"]`);
+    return el ? el.id : baseType;
+}
+
+function hideAllAdUnits(includingVideoAds = false)
 {
     if(!rampInitialised())
         return;
 
-    if(typeof ramp.destroyUnits === "function" && rampCurrAdUnitId != null)
+    if(typeof ramp.destroyUnits === "function" && rampCurrDisplayedAdTypes.length > 0)
     {
-        //patch fix: pass in currently used ad unit types instead of "all" as "all" was previously causing an issue relating to trying to also destroy the video player unit
-        ramp.destroyUnits(adUnitTypes);
-        //ramp.destroyUnits("all");
-
-        //set path to gamepage as no ad units are enabled for gamepage
-        ramp.setPath("gamepage");
-
-        rampCurrAdUnitId = null;
-        rampCurrAdUnitType = null;
+        if (!includingVideoAds)
+        {
+            const nonVideoAdTypes = rampCurrDisplayedAdTypes.filter(adType => adType !== adUnitTypeRewardedVideo && adType !== adUnitTypeNonRewardedVideo);
+            ramp.destroyUnits(nonVideoAdTypes.map(getActualUnitId));
+            rampCurrDisplayedAdTypes = rampCurrDisplayedAdTypes.filter(adType => adType === adUnitTypeRewardedVideo || adType === adUnitTypeNonRewardedVideo);
+        }
+        else
+        {
+            ramp.destroyUnits(rampCurrDisplayedAdTypes.map(getActualUnitId));
+            rampCurrDisplayedAdTypes = [];
+        }
     }
 }
 
-function rampDisplayAdUnit(path, adUnitId, adUnitType)
+function rampHideAdUnit(adUnitType)
 {
     if(!rampInitialised())
         return;
 
-    if (!isVideoAdPlaying && rampCurrAdUnitId != adUnitId && typeof ramp.setPath === "function" && typeof ramp.addUnits === "function")
+    const adIndex = rampCurrDisplayedAdTypes.indexOf(adUnitType);
+    if(adIndex < 0)
+        return;
+
+    rampCurrDisplayedAdTypes.splice(adIndex, 1);
+
+    if(typeof ramp.destroyUnits === "function")
     {
-        hideAllAdUnits();
-        
-        rampCurrPath = path;
+        ramp.destroyUnits([getActualUnitId(adUnitType)]);
+    }
+}
 
-        ramp.setPath(path).then(() =>
+function rampDisplayAdUnit(adUnitType)
+{
+    if (!rampInitialised())
+        return;
+
+    if (isVideoAdPlaying)
+        return;
+
+    if (rampCurrDisplayedAdTypes.includes(adUnitType))
+        return;
+
+    window.ramp.que.push(() =>
+    {
+        if (rampCurrDisplayedAdTypes.length === 0)
         {
-            var pwUnits = [
-                {
-                    selectorId: adUnitId,
-                    type: adUnitType
-                }
-            ];
+            rampCurrDisplayedAdTypes = [adUnitType];
 
-            rampCurrAdUnitId = adUnitId;
-            rampCurrAdUnitType = adUnitType;
-
-            ramp.addUnits(pwUnits).then(() =>
-            {
-                ramp.displayUnits();
+            window.ramp.spaAds({
+                ads: [{type: adUnitType}],
+                countPageView: countPageView,
             }).catch((e) =>
             {
-                ramp.displayUnits();
+                console.log(`error rampDisplayAdUnit spaAds type: ${adUnitType} error: ${e}`);
             });
 
-        }).catch((e) =>
+            countPageView = false;
+        }
+        else
         {
-            console.log(`playwire setPath ${path} error: ${e}`);
-        });
+            rampCurrDisplayedAdTypes.push(adUnitType);
 
-    }
-}
-
-function requestDummyMainMenuAd()
-{
-    rampDisplayAdUnit("premium-main", "pw_mainmenu_dummy", "med_rect_atf");
+            window.ramp.spaAddAds([{type: adUnitType}]).catch((e) =>
+            {
+                console.log(`error rampDisplayAdUnit spaAddAds type: ${adUnitType} error: ${e}`);
+            });
+        }
+    });
 }
 
 function requestMainMenuAd()
 {
-    rampDisplayAdUnit("mainmenu", "pw_mainmenu", "med_rect_atf");
+    rampDisplayAdUnit(adUnitTypeMainMenu);
 }
 
 function hideMainMenuAd()
 {
-    hideAllAdUnits();
+    rampHideAdUnit(adUnitTypeMainMenu);
 }
 
 function requestWinCeremonyAd()
 {
-    rampDisplayAdUnit("roundend", "pw_roundend", "med_rect_btf");
+    rampDisplayAdUnit(adUnitTypeWinCeremony);
 }
 
 function hideWinCeremonyAd()
 {
-    hideAllAdUnits();
+    rampHideAdUnit(adUnitTypeWinCeremony);
 }
 
-//stubs
-function requestLoadingAd() {}
-function hideLoadingAd() {}
-function requestSpectateAd() {}
-function hideSpectateAd() {}
+function requestLoadingAd() 
+{
+    rampDisplayAdUnit(adUnitTypeLoading);   
+}
+function hideLoadingAd() 
+{
+    rampHideAdUnit(adUnitTypeLoading);
+}
+
+function requestSpectateAd() 
+{
+    rampDisplayAdUnit(adUnitTypeSpectate);
+}
+
+function hideSpectateAd() 
+{
+    rampHideAdUnit(adUnitTypeSpectate);
+}
 
 function requestDeathAd()
 {
-    rampDisplayAdUnit("ondeath", "pw_ondeath", "leaderboard_atf");
+    rampDisplayAdUnit(adUnitTypeOnDeath);
 }
 
 function hideDeathAd()
 {
-    hideAllAdUnits();
+    rampHideAdUnit(adUnitTypeOnDeath);
 }
