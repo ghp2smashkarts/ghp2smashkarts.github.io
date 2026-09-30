@@ -1,13 +1,1 @@
-'use strict';
-
-function showInterstitial(audioOn, interstitialType, interstitialName)
-{
-}
-
-function tryInitRewardedInterstitial(audioOn)
-{
-}
-
-function tryShowRewardedInterstitial(audioOn)
-{
-}
+"use strict";function showInterstitial(){}function tryInitRewardedInterstitial(){}function tryShowRewardedInterstitial(){}
