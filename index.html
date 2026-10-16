@@ -174,7 +174,26 @@
 <script src="scripts/ads-injector.js"></script>
 
 <script>
-	//Used for installing progressive web apps 
+	//Load timing for analytics, all times are ms since navigation start (performance.now()). Read by Unity via getLoadStats()
+	var loadTiming = { loaderStartMs: -1, unityReadyMs: -1, cdnEntries: [], observer: null };
+	try
+	{
+		//keep build file and addressables requests (either CDN) so they can't be lost when the browser's resource timing buffer fills up with ad requests
+		loadTiming.observer = new PerformanceObserver((list) => addCdnTimingEntries(list.getEntries()));
+		loadTiming.observer.observe({ type: "resource", buffered: true });
+	}
+	catch (e) {}
+
+	function addCdnTimingEntries(entries)
+	{
+		for (var i = 0; i < entries.length; i++)
+		{
+			var name = entries[i].name;
+			if (name.indexOf("/Build2020New/") >= 0 || name.indexOf("/assetbundles/") >= 0) loadTiming.cdnEntries.push(entries[i]);
+		}
+	}
+
+	//Used for installing progressive web apps
 	if ('serviceWorker' in navigator)
 	{
 		navigator.serviceWorker.register('service-worker2.js');
@@ -209,11 +228,11 @@
 	var sentGameInstanceStartEvent = false;
 
 	// choose the data file based on whether there's support for the ASTC texture compression format
-	var dataFile = "/27dc4af88c449a26a42677d1f5eecb99.data.br";
-	var mobileDataFile = "/077b1699163345fbc2de194b5f7caf1a.data.br";
+	var dataFile = "/0ffd46e3c547038177e923f26058a39e.data.br";
+	var mobileDataFile = "/97def2cea05b6d1c057d018f3373e595.data.br";
     
-    var addressableCatalogFilename = "catalog_2026.10.13.12.04.19.json";
-    var mobileAddressableCatalogFilename = "catalog_2026.10.13.12.05.10.json";
+    var addressableCatalogFilename = "catalog_2026.10.16.12.37.25.json";
+    var mobileAddressableCatalogFilename = "catalog_2026.10.16.12.38.18.json";
 	
 	//safety check to ensure we dont try to use the mobileDataFile if the filename hasnt been parsed during the build phase
 	if(!mobileDataFile.includes("MOBILE_DATA_FILENAME"))
@@ -232,13 +251,46 @@
 		}
 	}
 
-	const buildUrl = "https://smashkartsgc.b-cdn.net/Build2020New";
+	//CDN A/B split: each player is put on Bunny or Cloudflare R2 and kept there (localStorage) so their browser cache stays warm.
+//?cdn=bunny or ?cdn=cf forces one for this load without changing the stored choice
+const cdnSplitCfPercent = 50;
+//R2 only allows CORS from these hosts, everywhere else (proxies, portals) stays on Bunny
+const cdnSplitCfHosts = ["smashkarts.io", "www.smashkarts.io", "smashkarts-dev.firebaseapp.com", "smashkarts-dev.web.app", "localhost"];
+const cdnUrls = {
+	bunny: { build: "https://smashkartsgc.b-cdn.net/Build2020New", addressables: "https://smashkartsgc.b-cdn.net/assetbundles/remote/webgl" },
+	cf: { build: "https://cdn.tall.team/Build2020New", addressables: "https://cdn.tall.team/assetbundles/remote/webgl" },
+};
+var cdnIsNew = false;
+const cdnName = (function ()
+{
+	if (cdnSplitCfHosts.indexOf(window.location.hostname) < 0) return "bunny";
 
+	try
+	{
+		var forced = new URLSearchParams(window.location.search).get("cdn");
+		if (cdnUrls[forced]) return forced;
+	}
+	catch (e) {}
+
+	var stored = null;
+	try { stored = localStorage.getItem("skCdn"); } catch (e) {}
+	if (cdnUrls[stored]) return stored;
+
+	cdnIsNew = true;
+	var picked = (Math.random() * 100 < cdnSplitCfPercent) ? "cf" : "bunny";
+	try { localStorage.setItem("skCdn", picked); } catch (e) {}
+	return picked;
+})();
+const buildUrl = cdnUrls[cdnName].build;
+const addressablesUrl = cdnUrls[cdnName].addressables;
+
+	//lets every firebase analytics event (old and new) be split by CDN
+	if (typeof cdnName !== "undefined" && enableFirebaseAnalytics && firebase.analytics != null) firebase.analytics().setUserProperties({ cdn: cdnName });
 	const loaderUrl = buildUrl + "/c4ce55f6fd990c1236bc84106eb955bf.loader.js";
 	const config = {
 		dataUrl: buildUrl + dataFile,
-		frameworkUrl: buildUrl + "/0a49eb00d7954040391a9959047cf725.framework.js.br",
-		codeUrl: buildUrl + "/2054fd85b06a8166deab3e656a397d9c.wasm.br",
+		frameworkUrl: buildUrl + "/bf9ce7c31424b9af74f636280a826933.framework.js.br",
+		codeUrl: buildUrl + "/edcd195d2e6bfca75c9892261f1a0eda.wasm.br",
 		// #if MEMORY_FILENAME
 		//         memoryUrl: buildUrl + "/",
 		// #endif
@@ -248,7 +300,7 @@
 		streamingAssetsUrl: "StreamingAssets",
 		companyName: "TallTeam",
 		productName: "Smash Karts",
-		productVersion: "2.16.0",
+		productVersion: "2.16.007",
 	};
 
 	var mainContainer = document.querySelector("#mainContainer");
@@ -313,6 +365,7 @@
 
 			if (updateProgressInterval) clearInterval(updateProgressInterval);
 
+			loadTiming.unityReadyMs = performance.now();
 			var lt = Date.now() - timerStart;
 			firebaseLogEventWithParam("loading_page_complete", "time", lt);
 			setV(lt);
@@ -323,6 +376,7 @@
 			alert("TT UnityLoader Error" + message);
 		});
 	};
+	loadTiming.loaderStartMs = performance.now();
 	document.body.appendChild(script);
 
 	function onUnityLoadComplete()
@@ -380,6 +434,60 @@
     function getAddressableCatalogFilename()
     {
         return addressableCatalogFilename;
+    }
+
+    //base url Unity loads the addressables catalog and bundles from, set by the injected build-url-*.js script
+    function getAddressablesBaseUrl()
+    {
+        return (typeof addressablesUrl !== "undefined") ? addressablesUrl : "";
+    }
+
+    function getCdnName()
+    {
+        return (typeof cdnName !== "undefined") ? cdnName : "";
+    }
+
+    //true when this load put the player on a CDN for the first time, ie their browser cache for it is cold
+    function getCdnIsNew()
+    {
+        return (typeof cdnIsNew !== "undefined") && cdnIsNew;
+    }
+
+    //Page load milestones plus totals for CDN requests whose url contains pathPart and started at or after sinceMs.
+    //kb and cached need a Timing-Allow-Origin header on the CDN, without it the browser hides sizes and they're sent as -1
+    function getLoadStats(pathPart, sinceMs)
+    {
+        if (loadTiming.observer) addCdnTimingEntries(loadTiming.observer.takeRecords());
+
+        var stats = { now: performance.now(), loaderStart: loadTiming.loaderStartMs, unityReady: loadTiming.unityReadyMs, n: 0, start: -1, end: -1, kb: -1, cached: -1 };
+        var bytes = 0;
+        var cached = 0;
+        var sizesVisible = false;
+
+        for (var i = 0; i < loadTiming.cdnEntries.length; i++)
+        {
+            var e = loadTiming.cdnEntries[i];
+            if (e.name.indexOf(pathPart) < 0 || e.startTime < sinceMs) continue;
+
+            stats.n++;
+            if (stats.start < 0 || e.startTime < stats.start) stats.start = e.startTime;
+            if (e.responseEnd > stats.end) stats.end = e.responseEnd;
+
+            if (e.encodedBodySize > 0)
+            {
+                sizesVisible = true;
+                bytes += e.transferSize;
+                if (e.transferSize === 0) cached++;
+            }
+        }
+
+        if (sizesVisible)
+        {
+            stats.kb = Math.round(bytes / 1024);
+            stats.cached = cached;
+        }
+
+        return JSON.stringify(stats);
     }
 
 </script>
