@@ -175,7 +175,14 @@
 
 <script>
 	//Load timing for analytics, all times are ms since navigation start (performance.now()). Read by Unity via getLoadStats()
-	var loadTiming = { loaderStartMs: -1, unityReadyMs: -1, cdnEntries: [], observer: null };
+	var loadTiming = { loaderStartMs: -1, unityReadyMs: -1, cdnEntries: [], observer: null, returningBrowser: -1, buildFiles: null };
+
+	//returning browser = Unity's IndexedDB cache (bundles + data file, keyed by url) already existed before this load, -1 when the browser can't tell
+	try
+	{
+		if (indexedDB.databases) indexedDB.databases().then((dbs) => { loadTiming.returningBrowser = dbs.some((db) => db.name && db.name.indexOf("UnityCache") >= 0) ? 1 : 0; }).catch(() => {});
+	}
+	catch (e) {}
 	try
 	{
 		//keep build file and addressables requests (either CDN) so they can't be lost when the browser's resource timing buffer fills up with ad requests
@@ -228,11 +235,11 @@
 	var sentGameInstanceStartEvent = false;
 
 	// choose the data file based on whether there's support for the ASTC texture compression format
-	var dataFile = "/0ffd46e3c547038177e923f26058a39e.data.br";
-	var mobileDataFile = "/97def2cea05b6d1c057d018f3373e595.data.br";
+	var dataFile = "/9ed5ebdcf60b83284c588509e3bd6496.data.br";
+	var mobileDataFile = "/72ba35765c28abeb1263fb2c640d2971.data.br";
     
-    var addressableCatalogFilename = "catalog_2026.10.16.12.37.25.json";
-    var mobileAddressableCatalogFilename = "catalog_2026.10.16.12.38.18.json";
+    var addressableCatalogFilename = "catalog_2026.10.19.09.40.34.json";
+    var mobileAddressableCatalogFilename = "catalog_2026.10.19.09.41.27.json";
 	
 	//safety check to ensure we dont try to use the mobileDataFile if the filename hasnt been parsed during the build phase
 	if(!mobileDataFile.includes("MOBILE_DATA_FILENAME"))
@@ -289,8 +296,8 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
 	const loaderUrl = buildUrl + "/c4ce55f6fd990c1236bc84106eb955bf.loader.js";
 	const config = {
 		dataUrl: buildUrl + dataFile,
-		frameworkUrl: buildUrl + "/bf9ce7c31424b9af74f636280a826933.framework.js.br",
-		codeUrl: buildUrl + "/edcd195d2e6bfca75c9892261f1a0eda.wasm.br",
+		frameworkUrl: buildUrl + "/bf5c9ad9327117f1a9bf7ffae7911187.framework.js.br",
+		codeUrl: buildUrl + "/f3403fbb3e2b59ae23b2d8fd9c184644.wasm.br",
 		// #if MEMORY_FILENAME
 		//         memoryUrl: buildUrl + "/",
 		// #endif
@@ -300,7 +307,14 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
 		streamingAssetsUrl: "StreamingAssets",
 		companyName: "TallTeam",
 		productName: "Smash Karts",
-		productVersion: "2.16.007",
+		productVersion: "2.16.008",
+	};
+	//the four build files, absolute so they compare with resource timing entry names, for the per file stats in getLoadStats()
+	loadTiming.buildFiles = {
+		loader: new URL(loaderUrl, document.baseURI).href,
+		framework: new URL(config.frameworkUrl, document.baseURI).href,
+		wasm: new URL(config.codeUrl, document.baseURI).href,
+		data: new URL(config.dataUrl, document.baseURI).href,
 	};
 
 	var mainContainer = document.querySelector("#mainContainer");
@@ -453,16 +467,108 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
         return (typeof cdnIsNew !== "undefined") && cdnIsNew;
     }
 
+    function getReturningBrowser()
+    {
+        return loadTiming.returningBrowser;
+    }
+
+    //which of the four build files a resource timing entry is (loader, framework, wasm, data), "" for anything else
+    function getBuildFileKey(url)
+    {
+        var files = loadTiming.buildFiles;
+        if (!files) return "";
+        for (var key in files)
+        {
+            if (files[key] === url) return key;
+        }
+        return "";
+    }
+
+    //where the browser got the file from, read from the sizes resource timing exposes (they need Timing-Allow-Origin on the CDN):
+    //n = downloaded over the network (body transferred), c = browser http cache (no request sent),
+    //h = 304 revalidation, body from the browser http cache, i = 304 revalidation, body from Unity's IndexedDB cache,
+    //u = unknown (sizes hidden). x (not requested) is added by getLoadStats for build files with no entry
+    function getEntrySourceCode(e)
+    {
+        if (e.transferSize === 0 && e.encodedBodySize === 0) return "u";
+        if (e.transferSize === 0) return "c";
+        if (e.encodedBodySize === 0) return "i";
+        //a 304 only transfers headers but reports the cached body's size, a real download transfers at least the body
+        if (e.transferSize < e.encodedBodySize) return "h";
+        return "n";
+    }
+
+    var entrySourceNames = {
+        n: "network download",
+        c: "browser http cache (no request)",
+        h: "revalidated 304, body from browser http cache",
+        i: "revalidated 304, body from Unity's IndexedDB cache",
+        u: "unknown (sizes hidden, no Timing-Allow-Origin)",
+    };
+
+    function getEntrySource(e)
+    {
+        return entrySourceNames[getEntrySourceCode(e)];
+    }
+
+    //total ms at least one of the [start, end] intervals was in flight, overlaps counted once
+    function getBusyMs(intervals)
+    {
+        intervals.sort((a, b) => a[0] - b[0]);
+        var busy = 0;
+        var runStart = -1;
+        var runEnd = -1;
+        for (var i = 0; i < intervals.length; i++)
+        {
+            if (intervals[i][0] > runEnd)
+            {
+                if (runEnd >= 0) busy += runEnd - runStart;
+                runStart = intervals[i][0];
+                runEnd = intervals[i][1];
+            }
+            else if (intervals[i][1] > runEnd)
+            {
+                runEnd = intervals[i][1];
+            }
+        }
+        if (runEnd >= 0) busy += runEnd - runStart;
+        return busy;
+    }
+
+    function logBuildFileEntry(key, e)
+    {
+        var ms = Math.round(e.responseEnd - e.startTime);
+        var line = "[LoadTiming] " + key + ": " + ms + " ms (start " + Math.round(e.startTime) + ", end " + Math.round(e.responseEnd) + ")";
+        //responseStart is 0 for cross-origin requests without Timing-Allow-Origin
+        if (e.responseStart > 0) line += ", first byte " + Math.round(e.responseStart - e.startTime) + " ms, body " + Math.round(e.responseEnd - e.responseStart) + " ms";
+        if (e.transferSize > 0) line += ", " + Math.round(e.transferSize / 1024) + " KB transferred";
+        if (e.decodedBodySize > 0) line += ", " + Math.round(e.decodedBodySize / 1024) + " KB decoded";
+        if (e.nextHopProtocol) line += ", " + e.nextHopProtocol;
+        line += ", " + getEntrySource(e) + ", " + e.name;
+        console.log(line);
+    }
+
     //Page load milestones plus totals for CDN requests whose url contains pathPart and started at or after sinceMs.
-    //kb and cached need a Timing-Allow-Origin header on the CDN, without it the browser hides sizes and they're sent as -1
+    //cached = served from the browser's http cache, reval = revalidated from Unity's IndexedDB cache (304, no body).
+    //kb, cached and reval need a Timing-Allow-Origin header on the CDN, without it the browser hides sizes and they're sent as -1
+    //net = ms at least one matching request was in flight (excludes gaps where nothing was downloading, eg the loader parsing the framework before requesting the wasm).
+    //loaderMs/frameworkMs/wasmMs/dataMs (+ Kb) = each build file's request start → last byte, -1 when that file wasn't requested.
+    //src = one getEntrySourceCode letter per build file in the order loader, framework, wasm, data, x when not requested. "nnnn" = all four freshly downloaded.
+    //Each build file is also logged to the console, plus a summary line for every call.
     function getLoadStats(pathPart, sinceMs)
     {
         if (loadTiming.observer) addCdnTimingEntries(loadTiming.observer.takeRecords());
 
-        var stats = { now: performance.now(), loaderStart: loadTiming.loaderStartMs, unityReady: loadTiming.unityReadyMs, n: 0, start: -1, end: -1, kb: -1, cached: -1 };
+        var stats = {
+            now: performance.now(), loaderStart: loadTiming.loaderStartMs, unityReady: loadTiming.unityReadyMs, n: 0, start: -1, end: -1, kb: -1, cached: -1, reval: -1, net: -1,
+            loaderMs: -1, frameworkMs: -1, wasmMs: -1, dataMs: -1, loaderKb: -1, frameworkKb: -1, wasmKb: -1, dataKb: -1, src: ""
+        };
         var bytes = 0;
         var cached = 0;
+        var reval = 0;
         var sizesVisible = false;
+        var intervals = [];
+        var files = {};
 
         for (var i = 0; i < loadTiming.cdnEntries.length; i++)
         {
@@ -472,12 +578,31 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
             stats.n++;
             if (stats.start < 0 || e.startTime < stats.start) stats.start = e.startTime;
             if (e.responseEnd > stats.end) stats.end = e.responseEnd;
+            intervals.push([e.startTime, e.responseEnd]);
 
-            if (e.encodedBodySize > 0)
+            //with Timing-Allow-Origin a network response always has transferSize > 0 (headers) and a cache hit has a body size
+            var code = getEntrySourceCode(e);
+            if (code !== "u")
             {
                 sizesVisible = true;
                 bytes += e.transferSize;
-                if (e.transferSize === 0) cached++;
+                if (code === "c") cached++;
+                else if (code === "h" || code === "i") reval++;
+            }
+
+            //a file requested more than once (eg a retry) covers its first start → last end and the bytes of every request
+            var key = getBuildFileKey(e.name);
+            if (key)
+            {
+                var f = files[key];
+                if (!f) f = files[key] = { start: e.startTime, end: e.responseEnd, bytes: 0, sizesVisible: false, src: code };
+                f.start = Math.min(f.start, e.startTime);
+                f.end = Math.max(f.end, e.responseEnd);
+                f.bytes += e.transferSize;
+                if (code !== "u") f.sizesVisible = true;
+                //a network download in any request wins, so a retry after a failed revalidation still reads as a download
+                if (code === "n" || f.src === "u") f.src = code;
+                logBuildFileEntry(key, e);
             }
         }
 
@@ -485,7 +610,27 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
         {
             stats.kb = Math.round(bytes / 1024);
             stats.cached = cached;
+            stats.reval = reval;
         }
+
+        if (stats.n > 0) stats.net = Math.round(getBusyMs(intervals));
+
+        for (var fileKey in files)
+        {
+            stats[fileKey + "Ms"] = Math.round(files[fileKey].end - files[fileKey].start);
+            if (files[fileKey].sizesVisible) stats[fileKey + "Kb"] = Math.round(files[fileKey].bytes / 1024);
+        }
+
+        //only for calls that cover the build files, "" for addressables calls
+        if (loadTiming.buildFiles && loadTiming.buildFiles.loader.indexOf(pathPart) >= 0)
+        {
+            for (var buildKey in loadTiming.buildFiles) stats.src += files[buildKey] ? files[buildKey].src : "x";
+        }
+
+        console.log("[LoadTiming] " + pathPart + " since " + Math.round(sinceMs) + ": " + stats.n + " requests"
+            + (stats.n > 0 ? ", first start " + Math.round(stats.start) + " → last end " + Math.round(stats.end) + " = " + Math.round(stats.end - stats.start) + " ms elapsed, " + stats.net + " ms with a download in flight" : "")
+            + ", " + (stats.kb >= 0 ? stats.kb + " KB transferred, " + stats.cached + " from http cache, " + stats.reval + " revalidated" : "sizes hidden (no Timing-Allow-Origin)")
+            + (stats.src ? ", src " + stats.src + " (loader, framework, wasm, data)" : ""));
 
         return JSON.stringify(stats);
     }
