@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+	<script src="scripts/constants.js"></script>
+	
+	
+	<meta charset="utf-8">
+	<link rel="icon" href="images/favicon.png" sizes="16x16">
+	<!-- og: Open graph meta tags allow you to control what content shows up when a page is shared on Facebook -->
+	<meta property="og:site_name" content="SmashKarts.io">
+	<meta property="og:title" content="Smash Karts" />
+	<meta property="og:url" content="https://smashkarts.io/" />
+	<meta property="og:type" content="website" />
+	<meta property="og:description"
+		  content="Smash Karts is a free io Multiplayer Kart Battle Arena game. Drive fast. Fire rockets. Make big explosions." />
+	<meta property="og:image" content="images/icon-144.png" />
+	<meta property="og:image:width" content="144" />
+	<meta property="og:image:height" content="144" />
+	<meta itemprop="name" content="Smash Karts" />
+	<meta itemprop="url" content="https://smashkarts.io/" />
+	<meta itemprop="description"
+		  content="Smash Karts is a free io Multiplayer Kart Battle Arena game. Drive fast. Fire rockets. Make big explosions." />
+	<meta itemprop="thumbnailUrl" content="https://smashkarts.io/" />
+	<link rel="image_src" href="https://smashkarts.io/" />
+	<meta itemprop="image" content="https://smashkarts.io/" />
+	<meta name="twitter:title" content="Smash Karts" />
+	<meta name="twitter:image" content="images/icon-144.png" />
+	<meta name="twitter:url" content="https://smashkarts.io/" />
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:description"
+		  content="Smash Karts is a free io Multiplayer Kart Battle Arena game. Drive fast. Fire rockets. Make big explosions." />
+	<meta name="description"
+		  content="Smash Karts is a free io Multiplayer Kart Battle Arena game. Drive fast. Fire rockets. Make big explosions." />
+	<meta name="google-site-verification" content="Kb9JniKgGSfuiJM_DNO2-Va7cSC00GlcBzbDw1Lgw_4" />
+	<meta itemprop="image primaryImageOfPage" content="images/smashkarts.png" />
+
+	<link rel="manifest" href="manifest.json">
+
+	<meta name="apple-mobile-web-app-title" content="Smash Karts">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<link rel="apple-touch-icon" href="images/icon-144.png">
+
+	<!-- <script type="text/javascript" src="xmlhttprequest-length-computable.js"></script> -->
+	<!--<script type="text/javascript" src="xmlhttprequest-length-computable.min.js"></script>
+	<script type="text/javascript">
+		window.xmlHTTPRequestLengthComputable = {
+			CONTENT_ENCODING_MULTIPLE: 3.0
+		}
+	</script> -->
+	
+	<!-- Youtube Game Schema -->
+	<script type="application/ld+json">
+		{
+			"@context": "http://schema.org",
+			"@type":"VideoGame",
+			"publisher": "Tall Team",
+			"name":[
+				{
+					"@language":"en",
+					"@value":"Smash Karts"
+				}
+			],
+			"description":[
+				{
+					"@language":"en",
+					"@value":"Smash Karts is a free io Multiplayer Kart Battle Arena game. Drive fast. Fire rockets. Make big explosions."
+				}
+			],
+			"applicationCategory":[
+				"Game"
+			],
+			"operatingSystem":[
+				"WEB"
+			],
+			"genre":[
+				"Car Battle",
+				"Shooter",
+				"Multiplayer"
+			],
+			"url":"https://smashkarts.io/",
+			"image":"images/SmashKartsPoster.jpg",
+			"screenshot":"images/SmashKartsBackground.jpg"
+		}
+	</script>
+	<title>Smash Karts</title>
+	<link rel="stylesheet" href="css/main.css" />
+	<meta name="viewport" content="minimal-ui, user-scalable=no, initial-scale=1, maximum-scale=1, width=device-width, viewport-fit=cover" />
+
+	<script src="scripts/ads-ab-test.js"></script>
+	<script src="scripts/ads-init.js"></script>
+</head>
+
+<body>
+<div id="mainContainer">
+	<div id="gameContainer">
+		<div id="gameCanvasWrapper">
+			<canvas id="gameCanvas"></canvas>
+		</div>
+		<div id="fullscreenPrompt">Tap to continue</div>
+
+		<!-- On canvas ad containers -->
+		<div id="adContainerLoadingLeft"> <!-- loading -->
+			<div id="smashkarts-io_300x600_2"></div> <!-- adinplay -->
+
+			<!-- playwire -->
+			<div id="pw_loading"></div>
+		</div>
+		<div id="adContainerMainMenu"> <!-- main menu -->
+			<div id="smashkarts-io_300x250"></div> <!-- adinplay -->
+
+			<!-- playwire -->
+			<div id="pw_mainmenu"></div>
+			<!-- dummy placement to ensure rewarded videos init correctly when ads are disabled for season pass holders -->
+			<div id="pw_mainmenu_dummy"></div>
+		</div>
+		<div id="adContainerWin"> <!-- win ceremony -->
+			<div id="smashkarts-io_300x250_2"></div> <!-- adinplay -->
+
+			<!-- playwire -->
+			<div id="pw_roundend"></div>
+			<!-- <div data-pw-desk="med_rect_btf" data-pw-mobi="med_rect_btf"></div> -->
+		</div>
+		<div id="adContainerSpectate"> <!-- spectate -->
+			<div id="smashkarts-io_300x250_3"></div> <!-- adinplay -->
+
+			<!-- playwire -->
+			<div id="pw_spectate"></div>
+		</div>
+		<div id="adContainerDeath"> <!-- death -->
+
+			<!-- adinplay -->
+			<div id="smashkarts-io_728x90-new"></div>
+			<div id="smashkarts-io_320x100"></div>
+
+			<!-- playwire -->
+			<div id="pw_ondeath"></div>
+			<!-- <div data-pw-desk="leaderboard_atf" data-pw-mobi="leaderboard_atf"></div> -->
+		</div>
+	</div>
+	<div id="pw-video-container"> <!-- playwire -->
+		<div id="pw_video_placeholder"></div>
+	</div>
+	<button id="pw-video-skip-btn" type="button" disabled>Skip in 10s</button>
+	<div id="preroll"></div> <!-- adinplay -->
+	<iframe id="xsolla-iframe"></iframe>
+</div>
+<div id="loader">
+	<img class="logo" src="images/smashkarts.png">
+	<div class="spinner"></div>
+	<div class="progress">
+		<div class="full"></div>
+	</div>
+</div>
+<div id="rotate-landscape">
+	<img src="images/r.png" class="center">
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.9.3/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.9.3/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.9.3/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.9.3/firebase-analytics-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.9.3/firebase-functions-compat.js"></script>
+
+<script src="scripts/main.js"></script>
+<script src="scripts/auth.js"></script>
+<script src="scripts/shop.js"></script>
+<script src="scripts/cc.js"></script>
+ 
+<script src="scripts/ads-common-logic.js"></script>
+<!--<script src="scripts/ads-offcanvas-logic.js"></script>-->
+<script src="scripts/ads-positioning-logic.js"></script>
+<script src="scripts/ads-injector.js"></script>
+
+<script>
+	//Load timing for analytics, all times are ms since navigation start (performance.now()). Read by Unity via getLoadStats()
+	var loadTiming = { loaderStartMs: -1, unityReadyMs: -1, cdnEntries: [], observer: null };
+	try
+	{
+		//keep build file and addressables requests (either CDN) so they can't be lost when the browser's resource timing buffer fills up with ad requests
+		loadTiming.observer = new PerformanceObserver((list) => addCdnTimingEntries(list.getEntries()));
+		loadTiming.observer.observe({ type: "resource", buffered: true });
+	}
+	catch (e) {}
+
+	function addCdnTimingEntries(entries)
+	{
+		for (var i = 0; i < entries.length; i++)
+		{
+			var name = entries[i].name;
+			if (name.indexOf("/Build2020New/") >= 0 || name.indexOf("/assetbundles/") >= 0) loadTiming.cdnEntries.push(entries[i]);
+		}
+	}
+
+	//Used for installing progressive web apps
+	if ('serviceWorker' in navigator)
+	{
+		navigator.serviceWorker.register('service-worker2.js');
+	}
+
+	const firebaseConfig = {
+    apiKey: "AIzaSyAdY2qq9083amKDS0R8tn2tjIKQB8mocco",
+    authDomain: "webgltest-17af1.firebaseapp.com",
+    databaseURL: "https://webgltest-17af1.firebaseio.com",
+    projectId: "webgltest-17af1",
+    messagingSenderId: "480659433590",
+    appId: "1:480659433590:web:a01ad1599e963843a0d757",
+    measurementId: "G-1W23DRFHK9"
+};
+
+	
+	// Initialize Firebase
+	firebase.initializeApp(firebaseConfig);
+
+	
+
+	analytics = firebase.analytics();
+	gtag('config', 'G-1W23DRFHK9', {'cookie_flags': 'samesite=none;secure'}); 
+	
+	firebaseSetScreen("loading_start");
+	firebaseLogEvent("loading_page_start");
+
+	updateAdBlockDetected();
+	updateLoadingAdBanner();
+	
+	var timerStart = Date.now();
+	var sentGameInstanceStartEvent = false;
+
+	// choose the data file based on whether there's support for the ASTC texture compression format
+	var dataFile = "/0ffd46e3c547038177e923f26058a39e.data.br";
+	var mobileDataFile = "/97def2cea05b6d1c057d018f3373e595.data.br";
+    
+    var addressableCatalogFilename = "catalog_2026.10.16.12.37.25.json";
+    var mobileAddressableCatalogFilename = "catalog_2026.10.16.12.38.18.json";
+	
+	//safety check to ensure we dont try to use the mobileDataFile if the filename hasnt been parsed during the build phase
+	if(!mobileDataFile.includes("MOBILE_DATA_FILENAME"))
+	{
+		var c = document.createElement("canvas");
+		var gl = c.getContext("webgl");
+		var gl2 = c.getContext("webgl2");
+		if ((gl && gl.getExtension('WEBGL_compressed_texture_astc')) || (gl2 && gl2.getExtension('WEBGL_compressed_texture_astc'))) 
+		{
+			dataFile = mobileDataFile;
+            
+            if(!mobileAddressableCatalogFilename.includes("MOBILE_ADDRESSABLE_CATALOG_FILENAME"))
+            {
+                addressableCatalogFilename = mobileAddressableCatalogFilename;
+            }
+		}
+	}
+
+	const cdnName = "cf";
+const buildUrl = "https://cdn.tall.team/Build2020New";
+const addressablesUrl = "https://cdn.tall.team/assetbundles/remote/webgl";
+
+	//lets every firebase analytics event (old and new) be split by CDN
+	if (typeof cdnName !== "undefined" && enableFirebaseAnalytics && firebase.analytics != null) firebase.analytics().setUserProperties({ cdn: cdnName });
+	const loaderUrl = buildUrl + "/c4ce55f6fd990c1236bc84106eb955bf.loader.js";
+	const config = {
+		dataUrl: buildUrl + dataFile,
+		frameworkUrl: buildUrl + "/bf9ce7c31424b9af74f636280a826933.framework.js.br",
+		codeUrl: buildUrl + "/edcd195d2e6bfca75c9892261f1a0eda.wasm.br",
+		// #if MEMORY_FILENAME
+		//         memoryUrl: buildUrl + "/",
+		// #endif
+		// #if SYMBOLS_FILENAME
+		//         symbolsUrl: buildUrl + "/",
+		// #endif
+		streamingAssetsUrl: "StreamingAssets",
+		companyName: "TallTeam",
+		productName: "Smash Karts",
+		productVersion: "2.16.007",
+	};
+
+	var mainContainer = document.querySelector("#mainContainer");
+	var gameContainer = document.querySelector("#gameContainer");
+	var canvas = document.querySelector("#gameCanvas");
+	var loadingBar = document.querySelector("#loader");
+	var progressBarFull = document.querySelector("#loader .progress .full");
+	var rotateLandscape = document.querySelector("#rotate-landscape");
+	
+	if (isMobile())
+	{
+		mainContainer.className = "unity-mobile";
+
+		// if(isIos())
+		// {
+		// 	//Allow scrolling on mobile iOS so user can scroll off the top tab bar
+		// 	document.body.style.overflow = "visible";
+		// }
+
+		if (isAndroid())
+		{
+			// iOS Safari doesn't support requestFullscreen() on arbitrary elements, so this
+			// is Android-only. Reuses the same fullscreen plumbing as the desktop toggle button.
+			setElementFullScreen(document.documentElement);
+
+			// Keeps `fs` accurate (e.g. if the player leaves fullscreen via the back button/
+			// gesture rather than our own toggle) and shows a "tap to continue" prompt with
+			// its own gesture handler to get back into fullscreen, since the one-time
+			// first-gesture listener above has already fired and removed itself by then.
+			initFullscreenRecovery(document.getElementById("fullscreenPrompt"));
+		}
+	}
+	else
+	{
+		rotateLandscape.id = "rotateLandscapeOff";
+		rotateLandscape.style.display = "none";
+	}
+	const progress = document.querySelector("#loader .progress");
+	progress.style.display = "block";
+	progressBarFull.style.width = "0%";
+
+	var script = document.createElement("script");
+	script.src = loaderUrl;
+
+	var progressCreateUnityInstance = 0;
+	var progressPostCreateUnityInstance = 0;
+	var updateProgressInterval = setInterval(updateProgress, 100);
+
+	var gameInstance;
+	script.onload = () =>
+	{
+		createUnityInstance(canvas, config, (progress) =>
+		{
+			progressCreateUnityInstance = 100 * progress;
+			setProgressWidth();
+		}).then((unityInstance) =>
+		{
+			if (isMobile()) document.body.style.background = "#000000";
+			loadingBar.style.display = "none";
+			window.unityGame = unityInstance;
+			gameInstance = unityInstance;
+
+			if (updateProgressInterval) clearInterval(updateProgressInterval);
+
+			loadTiming.unityReadyMs = performance.now();
+			var lt = Date.now() - timerStart;
+			firebaseLogEventWithParam("loading_page_complete", "time", lt);
+			setV(lt);
+
+			onUnityLoadComplete();
+		}).catch((message) =>
+		{
+			alert("TT UnityLoader Error" + message);
+		});
+	};
+	loadTiming.loaderStartMs = performance.now();
+	document.body.appendChild(script);
+
+	function onUnityLoadComplete()
+	{
+		//tell unity what ad providers are enabled
+		window.unityGame.SendMessage(unityFirebaseGameOjbectName, "SetDisplayAdProvider", displayAdProvider);
+		window.unityGame.SendMessage(unityFirebaseGameOjbectName, "SetVideoAdProvider", videoAdProvider);
+
+		//log AB test assignment to analytics
+		if (abTestSelectedProvider) {
+			window.unityGame.SendMessage(unityFirebaseGameOjbectName, "OnJSABTestLoaded", abTestSelectedProvider);
+		}
+		
+		trySendAdBlockDetectedMessage();
+	}
+
+	function updateProgress()
+	{
+		if (progressCreateUnityInstance > 85)
+		{
+			progressPostCreateUnityInstance += 1;
+			setProgressWidth();
+		}
+	}
+
+	function setProgressWidth()
+	{
+		if (progressCreateUnityInstance == 100.0)
+		{
+			progressBarFull.style.width = "100%";
+		}
+		else
+		{
+			var percent;
+			if (isMobile())
+			{
+				percent = progressCreateUnityInstance * 0.6 + (progressPostCreateUnityInstance * 0.5 * 0.2 + progressCreateUnityInstance * 0.5 * 0.2 * 0.05);
+				percent = Math.min(percent, 90);
+			}
+			else
+			{
+				percent = progressCreateUnityInstance * 0.9 + progressPostCreateUnityInstance * 0.1;
+				percent = Math.min(percent, 95);
+			}
+			progressBarFull.style.width = percent + "%";
+		}
+	}
+
+	function setAdinPlaySubIdForABTest(val)
+	{
+		//set adinplay subid which enables segmented daily reports
+		aiptag.subid = val;
+	}
+
+    function getAddressableCatalogFilename()
+    {
+        return addressableCatalogFilename;
+    }
+
+    //base url Unity loads the addressables catalog and bundles from, set by the injected build-url-*.js script
+    function getAddressablesBaseUrl()
+    {
+        return (typeof addressablesUrl !== "undefined") ? addressablesUrl : "";
+    }
+
+    function getCdnName()
+    {
+        return (typeof cdnName !== "undefined") ? cdnName : "";
+    }
+
+    //true when this load put the player on a CDN for the first time, ie their browser cache for it is cold
+    function getCdnIsNew()
+    {
+        return (typeof cdnIsNew !== "undefined") && cdnIsNew;
+    }
+
+    //Page load milestones plus totals for CDN requests whose url contains pathPart and started at or after sinceMs.
+    //kb and cached need a Timing-Allow-Origin header on the CDN, without it the browser hides sizes and they're sent as -1
+    function getLoadStats(pathPart, sinceMs)
+    {
+        if (loadTiming.observer) addCdnTimingEntries(loadTiming.observer.takeRecords());
+
+        var stats = { now: performance.now(), loaderStart: loadTiming.loaderStartMs, unityReady: loadTiming.unityReadyMs, n: 0, start: -1, end: -1, kb: -1, cached: -1 };
+        var bytes = 0;
+        var cached = 0;
+        var sizesVisible = false;
+
+        for (var i = 0; i < loadTiming.cdnEntries.length; i++)
+        {
+            var e = loadTiming.cdnEntries[i];
+            if (e.name.indexOf(pathPart) < 0 || e.startTime < sinceMs) continue;
+
+            stats.n++;
+            if (stats.start < 0 || e.startTime < stats.start) stats.start = e.startTime;
+            if (e.responseEnd > stats.end) stats.end = e.responseEnd;
+
+            if (e.encodedBodySize > 0)
+            {
+                sizesVisible = true;
+                bytes += e.transferSize;
+                if (e.transferSize === 0) cached++;
+            }
+        }
+
+        if (sizesVisible)
+        {
+            stats.kb = Math.round(bytes / 1024);
+            stats.cached = cached;
+        }
+
+        return JSON.stringify(stats);
+    }
+
+</script>
+</body>
+</html>

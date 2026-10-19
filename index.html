@@ -253,7 +253,7 @@
 
 	//CDN A/B split: each player is put on Bunny or Cloudflare R2 and kept there (localStorage) so their browser cache stays warm.
 //?cdn=bunny or ?cdn=cf forces one for this load without changing the stored choice
-const cdnSplitCfPercent = 50;
+const cdnSplitCfPercent = 0;
 //R2 only allows CORS from these hosts, everywhere else (proxies, portals) stays on Bunny
 const cdnSplitCfHosts = ["smashkarts.io", "www.smashkarts.io", "smashkarts-dev.firebaseapp.com", "smashkarts-dev.web.app", "localhost"];
 const cdnUrls = {
