@@ -1,3 +1,1 @@
-'use strict';
-
-setOffCanvasAdDivDimensions = true;
+"use strict";setOffCanvasAdDivDimensions=!0

@@ -175,7 +175,26 @@
 
 <script>
 	//Load timing for analytics, all times are ms since navigation start (performance.now()). Read by Unity via getLoadStats()
-	var loadTiming = { loaderStartMs: -1, unityReadyMs: -1, cdnEntries: [], observer: null, returningBrowser: -1, buildFiles: null };
+	var loadTiming = { loaderStartMs: -1, unityReadyMs: -1, cdnEntries: [], observer: null, returningBrowser: -1, buildFiles: null, hiddenSince: -1, hiddenIntervals: [] };
+
+	//every [start, end] the tab was hidden. Unity's main loop (requestAnimationFrame) stops while hidden, so loads that were hidden are slower for reasons unrelated to loading
+	try
+	{
+		if (document.visibilityState === "hidden") loadTiming.hiddenSince = 0;
+		document.addEventListener("visibilitychange", () =>
+		{
+			if (document.visibilityState === "hidden")
+			{
+				if (loadTiming.hiddenSince < 0) loadTiming.hiddenSince = performance.now();
+			}
+			else if (loadTiming.hiddenSince >= 0)
+			{
+				loadTiming.hiddenIntervals.push([loadTiming.hiddenSince, performance.now()]);
+				loadTiming.hiddenSince = -1;
+			}
+		});
+	}
+	catch (e) {}
 
 	//returning browser = Unity's IndexedDB cache (bundles + data file, keyed by url) already existed before this load, -1 when the browser can't tell
 	try
@@ -235,11 +254,11 @@
 	var sentGameInstanceStartEvent = false;
 
 	// choose the data file based on whether there's support for the ASTC texture compression format
-	var dataFile = "/9ed5ebdcf60b83284c588509e3bd6496.data.br";
-	var mobileDataFile = "/72ba35765c28abeb1263fb2c640d2971.data.br";
+	var dataFile = "/018761a7d655ea1215c4013b6a753746.data.br";
+	var mobileDataFile = "/320dddccb9fe40e632abbf2e4e32cc4a.data.br";
     
-    var addressableCatalogFilename = "catalog_2026.10.19.09.40.34.json";
-    var mobileAddressableCatalogFilename = "catalog_2026.10.19.09.41.27.json";
+    var addressableCatalogFilename = "catalog_2026.10.19.15.19.22.json";
+    var mobileAddressableCatalogFilename = "catalog_2026.10.19.15.20.35.json";
 	
 	//safety check to ensure we dont try to use the mobileDataFile if the filename hasnt been parsed during the build phase
 	if(!mobileDataFile.includes("MOBILE_DATA_FILENAME"))
@@ -296,8 +315,8 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
 	const loaderUrl = buildUrl + "/c4ce55f6fd990c1236bc84106eb955bf.loader.js";
 	const config = {
 		dataUrl: buildUrl + dataFile,
-		frameworkUrl: buildUrl + "/bf5c9ad9327117f1a9bf7ffae7911187.framework.js.br",
-		codeUrl: buildUrl + "/f3403fbb3e2b59ae23b2d8fd9c184644.wasm.br",
+		frameworkUrl: buildUrl + "/58d488b206d2d19f78c30862adbcb687.framework.js.br",
+		codeUrl: buildUrl + "/1f27c838cd5931fc8c960834488bc4eb.wasm.br",
 		// #if MEMORY_FILENAME
 		//         memoryUrl: buildUrl + "/",
 		// #endif
@@ -307,7 +326,7 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
 		streamingAssetsUrl: "StreamingAssets",
 		companyName: "TallTeam",
 		productName: "Smash Karts",
-		productVersion: "2.16.008",
+		productVersion: "2.16.050",
 	};
 	//the four build files, absolute so they compare with resource timing entry names, for the per file stats in getLoadStats()
 	loadTiming.buildFiles = {
@@ -535,12 +554,29 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
         return busy;
     }
 
+    //request sent → first byte: round trip plus the CDN's response time, including any origin fetch on an edge miss. -1 without Timing-Allow-Origin
+    function getTtfbMs(e)
+    {
+        return e.requestStart > 0 && e.responseStart > 0 ? Math.round(e.responseStart - e.requestStart) : -1;
+    }
+
+    //1 if the tab was hidden at any point since sinceMs (including now), 0 if not
+    function wasHiddenSince(sinceMs)
+    {
+        if (loadTiming.hiddenSince >= 0) return 1;
+        for (var i = 0; i < loadTiming.hiddenIntervals.length; i++)
+        {
+            if (loadTiming.hiddenIntervals[i][1] >= sinceMs) return 1;
+        }
+        return 0;
+    }
+
     function logBuildFileEntry(key, e)
     {
         var ms = Math.round(e.responseEnd - e.startTime);
         var line = "[LoadTiming] " + key + ": " + ms + " ms (start " + Math.round(e.startTime) + ", end " + Math.round(e.responseEnd) + ")";
         //responseStart is 0 for cross-origin requests without Timing-Allow-Origin
-        if (e.responseStart > 0) line += ", first byte " + Math.round(e.responseStart - e.startTime) + " ms, body " + Math.round(e.responseEnd - e.responseStart) + " ms";
+        if (e.responseStart > 0) line += ", first byte " + Math.round(e.responseStart - e.startTime) + " ms (" + getTtfbMs(e) + " ms after the request was sent), body " + Math.round(e.responseEnd - e.responseStart) + " ms";
         if (e.transferSize > 0) line += ", " + Math.round(e.transferSize / 1024) + " KB transferred";
         if (e.decodedBodySize > 0) line += ", " + Math.round(e.decodedBodySize / 1024) + " KB decoded";
         if (e.nextHopProtocol) line += ", " + e.nextHopProtocol;
@@ -554,6 +590,8 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
     //net = ms at least one matching request was in flight (excludes gaps where nothing was downloading, eg the loader parsing the framework before requesting the wasm).
     //loaderMs/frameworkMs/wasmMs/dataMs (+ Kb) = each build file's request start → last byte, -1 when that file wasn't requested.
     //src = one getEntrySourceCode letter per build file in the order loader, framework, wasm, data, x when not requested. "nnnn" = all four freshly downloaded.
+    //loaderTtfb/frameworkTtfb/wasmTtfb/dataTtfb = getTtfbMs per build file. catalogMs/catalogTtfb = the addressables catalog request, whatever pathPart is.
+    //hidden = 1 if the tab was hidden at any point since sinceMs.
     //Each build file is also logged to the console, plus a summary line for every call.
     function getLoadStats(pathPart, sinceMs)
     {
@@ -561,8 +599,10 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
 
         var stats = {
             now: performance.now(), loaderStart: loadTiming.loaderStartMs, unityReady: loadTiming.unityReadyMs, n: 0, start: -1, end: -1, kb: -1, cached: -1, reval: -1, net: -1,
-            loaderMs: -1, frameworkMs: -1, wasmMs: -1, dataMs: -1, loaderKb: -1, frameworkKb: -1, wasmKb: -1, dataKb: -1, src: ""
+            loaderMs: -1, frameworkMs: -1, wasmMs: -1, dataMs: -1, loaderKb: -1, frameworkKb: -1, wasmKb: -1, dataKb: -1, src: "",
+            loaderTtfb: -1, frameworkTtfb: -1, wasmTtfb: -1, dataTtfb: -1, catalogMs: -1, catalogTtfb: -1, hidden: wasHiddenSince(sinceMs)
         };
+        var catalogEntry = null;
         var bytes = 0;
         var cached = 0;
         var reval = 0;
@@ -573,6 +613,7 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
         for (var i = 0; i < loadTiming.cdnEntries.length; i++)
         {
             var e = loadTiming.cdnEntries[i];
+            if (!catalogEntry && /\/assetbundles\/.*catalog_[^\/]*\.json/.test(e.name)) catalogEntry = e;
             if (e.name.indexOf(pathPart) < 0 || e.startTime < sinceMs) continue;
 
             stats.n++;
@@ -595,30 +636,42 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
             if (key)
             {
                 var f = files[key];
-                if (!f) f = files[key] = { start: e.startTime, end: e.responseEnd, bytes: 0, sizesVisible: false, src: code };
+                if (!f) f = files[key] = { start: e.startTime, end: e.responseEnd, bytes: 0, sizesVisible: false, src: code, ttfb: getTtfbMs(e) };
                 f.start = Math.min(f.start, e.startTime);
                 f.end = Math.max(f.end, e.responseEnd);
                 f.bytes += e.transferSize;
                 if (code !== "u") f.sizesVisible = true;
                 //a network download in any request wins, so a retry after a failed revalidation still reads as a download
-                if (code === "n" || f.src === "u") f.src = code;
+                if (code === "n" || f.src === "u")
+                {
+                    f.src = code;
+                    f.ttfb = getTtfbMs(e);
+                }
                 logBuildFileEntry(key, e);
             }
         }
 
-        if (sizesVisible)
+        //no requests is a known 0, -1 only means the CDN hid the sizes
+        if (sizesVisible || stats.n === 0)
         {
             stats.kb = Math.round(bytes / 1024);
             stats.cached = cached;
             stats.reval = reval;
         }
 
-        if (stats.n > 0) stats.net = Math.round(getBusyMs(intervals));
+        stats.net = Math.round(getBusyMs(intervals));
 
         for (var fileKey in files)
         {
             stats[fileKey + "Ms"] = Math.round(files[fileKey].end - files[fileKey].start);
             if (files[fileKey].sizesVisible) stats[fileKey + "Kb"] = Math.round(files[fileKey].bytes / 1024);
+            stats[fileKey + "Ttfb"] = files[fileKey].ttfb;
+        }
+
+        if (catalogEntry)
+        {
+            stats.catalogMs = Math.round(catalogEntry.responseEnd - catalogEntry.startTime);
+            stats.catalogTtfb = getTtfbMs(catalogEntry);
         }
 
         //only for calls that cover the build files, "" for addressables calls
@@ -629,8 +682,14 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
 
         console.log("[LoadTiming] " + pathPart + " since " + Math.round(sinceMs) + ": " + stats.n + " requests"
             + (stats.n > 0 ? ", first start " + Math.round(stats.start) + " → last end " + Math.round(stats.end) + " = " + Math.round(stats.end - stats.start) + " ms elapsed, " + stats.net + " ms with a download in flight" : "")
-            + ", " + (stats.kb >= 0 ? stats.kb + " KB transferred, " + stats.cached + " from http cache, " + stats.reval + " revalidated" : "sizes hidden (no Timing-Allow-Origin)")
-            + (stats.src ? ", src " + stats.src + " (loader, framework, wasm, data)" : ""));
+            + (stats.n === 0 ? "" : ", " + (stats.kb >= 0 ? stats.kb + " KB transferred, " + stats.cached + " from http cache, " + stats.reval + " revalidated" : "sizes hidden (no Timing-Allow-Origin)"))
+            + (stats.src ? ", src " + stats.src + " (loader, framework, wasm, data)" : "")
+            + (stats.hidden ? ", tab was hidden" : ""));
+        if (stats.src && catalogEntry)
+        {
+            console.log("[LoadTiming] catalog: " + stats.catalogMs + " ms (start " + Math.round(catalogEntry.startTime) + ", end " + Math.round(catalogEntry.responseEnd) + "), "
+                + stats.catalogTtfb + " ms request sent → first byte, " + getEntrySource(catalogEntry) + ", " + catalogEntry.name);
+        }
 
         return JSON.stringify(stats);
     }

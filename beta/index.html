@@ -98,6 +98,7 @@
 		<div id="gameCanvasWrapper">
 			<canvas id="gameCanvas"></canvas>
 		</div>
+		<div id="fullscreenPrompt">Tap to continue</div>
 
 		<!-- On canvas ad containers -->
 		<div id="adContainerLoadingLeft"> <!-- loading -->
@@ -208,11 +209,11 @@
 	var sentGameInstanceStartEvent = false;
 
 	// choose the data file based on whether there's support for the ASTC texture compression format
-	var dataFile = "/bf30e2faaa112e533b2eb9ed56ee6b4b.data.br";
-	var mobileDataFile = "/5b714cfc7f6a0f1d9d7bb91b24806639.data.br";
+	var dataFile = "/cc9f0dc0c5398abfb1ef9584098c5eec.data.br";
+	var mobileDataFile = "/33f78646e2fd2fd3c51889012b5c61e7.data.br";
     
-    var addressableCatalogFilename = "catalog_2026.08.27.11.20.17.json";
-    var mobileAddressableCatalogFilename = "catalog_2026.08.27.11.21.22.json";
+    var addressableCatalogFilename = "catalog_2026.10.19.12.23.20.json";
+    var mobileAddressableCatalogFilename = "catalog_2026.10.19.12.24.21.json";
 	
 	//safety check to ensure we dont try to use the mobileDataFile if the filename hasnt been parsed during the build phase
 	if(!mobileDataFile.includes("MOBILE_DATA_FILENAME"))
@@ -236,8 +237,8 @@
 	const loaderUrl = buildUrl + "/c4ce55f6fd990c1236bc84106eb955bf.loader.js";
 	const config = {
 		dataUrl: buildUrl + dataFile,
-		frameworkUrl: buildUrl + "/91c782264594523ef148b9aceca68cbb.framework.js.br",
-		codeUrl: buildUrl + "/c91243098a90a0c932bebe18aa2a3513.wasm.br",
+		frameworkUrl: buildUrl + "/a72ff06082c1e575caddcbab1349d41f.framework.js.br",
+		codeUrl: buildUrl + "/3a14f9a9d8b30284ff4707bd84bc3cbf.wasm.br",
 		// #if MEMORY_FILENAME
 		//         memoryUrl: buildUrl + "/",
 		// #endif
@@ -247,7 +248,7 @@
 		streamingAssetsUrl: "StreamingAssets",
 		companyName: "TallTeam",
 		productName: "Smash Karts",
-		productVersion: "2.15.1",
+		productVersion: "2.16.002",
 	};
 
 	var mainContainer = document.querySelector("#mainContainer");
@@ -266,6 +267,19 @@
 		// 	//Allow scrolling on mobile iOS so user can scroll off the top tab bar
 		// 	document.body.style.overflow = "visible";
 		// }
+
+		if (isAndroid())
+		{
+			// iOS Safari doesn't support requestFullscreen() on arbitrary elements, so this
+			// is Android-only. Reuses the same fullscreen plumbing as the desktop toggle button.
+			setElementFullScreen(document.documentElement);
+
+			// Keeps `fs` accurate (e.g. if the player leaves fullscreen via the back button/
+			// gesture rather than our own toggle) and shows a "tap to continue" prompt with
+			// its own gesture handler to get back into fullscreen, since the one-time
+			// first-gesture listener above has already fired and removed itself by then.
+			initFullscreenRecovery(document.getElementById("fullscreenPrompt"));
+		}
 	}
 	else
 	{
