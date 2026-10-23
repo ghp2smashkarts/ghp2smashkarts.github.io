@@ -254,17 +254,17 @@
 	var sentGameInstanceStartEvent = false;
 
 	// choose the data file based on whether there's support for the ASTC texture compression format
-	var dataFile = "/5a3f904ba064ebac8ccae6b95e047903.data.br";
-	var mobileDataFile = "/7b810fe311b195f57bc9bd1801a92b49.data.br";
+	var dataFile = "/3a2790b097d7cf6dc6dc642d01126f13.data.br";
+	var mobileDataFile = "/184d2bd4c778fb595e028311e0e7b7e0.data.br";
     
-    var addressableCatalogFilename = "catalog_2026.10.20.14.11.26.json";
-    var mobileAddressableCatalogFilename = "catalog_2026.10.20.14.12.37.json";
+    var addressableCatalogFilename = "catalog_2026.10.23.09.47.14.json";
+    var mobileAddressableCatalogFilename = "catalog_2026.10.23.09.48.34.json";
 	var usingMobileData = false;
 
 	//vars rather than inline so build-ab.js can swap in the A/B test variant's files
 	var loaderFile = "c4ce55f6fd990c1236bc84106eb955bf.loader.js";
-	var frameworkFile = "ce4321632047d442149d3cf20d1c92ed.framework.js.br";
-	var codeFile = "402314d5c05359ff80b3f6206f644240.wasm.br";
+	var frameworkFile = "a8389363313c7373641ccf13bbaee88a.framework.js.br";
+	var codeFile = "78affe29270e090629c90aa051a4224f.wasm.br";
 
 	//safety check to ensure we dont try to use the mobileDataFile if the filename hasnt been parsed during the build phase
 	if(!mobileDataFile.includes("MOBILE_DATA_FILENAME"))
@@ -285,10 +285,10 @@
 	}
 
 	//A/B group first, build-url-split.js can pick the CDN per group
-//Web build A/B test: each player is put on this page's build (control) or a second build (variant) and kept there (localStorage) so their browser cache stays warm.
+	//Web build A/B test: each player is put on this page's build (control) or a second build (variant) and kept there (localStorage) so their browser cache stays warm.
 //buildscripts/ab_pair_variant.sh fills in the line below with the variant's build-manifest.json, test id and percentage. Unpaired, every player gets control and buildAbGroup is ""
 //?build=control or ?build=variant forces one for this load without changing the stored choice
-var buildAbVariant = {"buildVer":"2.16.052","clientVersion":"4.1.0","versionNum":410,"photonAppVersion":"1012","unityVersion":"2022.3.62f2","loader":"c4ce55f6fd990c1236bc84106eb955bf.loader.js","framework":"d90e9618e6774e82ab97187cd89de0b9.framework.js.br","code":"83df1b8a1eb6042e196aa47799bba9d1.wasm.br","data":"fcf6ee64130301e5fef6bdf1e78021f1.data.br","mobileData":"04b1358e86e695d87ddb8cee07293498.data.br","catalog":"catalog_2026.10.20.12.51.33.json","mobileCatalog":"catalog_2026.10.20.12.52.43.json"}; var buildAbTest = "20-10-26-test01"; var buildAbVariantPercent = 10; //__BUILD_AB_VARIANT_MANIFEST__ paired by ab_pair_variant.sh: variant 2.16.052 (abv01)
+var buildAbVariant = null; var buildAbTest = ""; var buildAbVariantPercent = 0; //__BUILD_AB_VARIANT_MANIFEST__
 //only these hosts are in the test, everywhere else (proxies, portals) stays on control
 const buildAbHosts = ["smashkarts.io", "www.smashkarts.io", "smashkarts-dev.firebaseapp.com", "smashkarts-dev.web.app", "localhost"];
 var buildAbIsNew = false;
@@ -351,13 +351,15 @@ if (buildAbGroup !== "")
 	}
 	catch (e) {}
 }
-//CDN A/B split: each player is put on Bunny or Cloudflare R2 and kept there (localStorage) so their browser cache stays warm.
+
+	//CDN A/B split: each player is put on Bunny or Cloudflare R2 and kept there (localStorage) so their browser cache stays warm.
 //?cdn=bunny or ?cdn=cf forces one for this load without changing the stored choice
 //The percentage below is the default, buildscripts/set_cdn_split.sh sets it per deploy without a rebuild
 const cdnSplitCfPercent = 90; //__CDN_SPLIT_CF_PERCENT__
 //optional per web build A/B test group percentages that replace cdnSplitCfPercent for that group, eg { control: 100, variant: 0 }.
-//Needs build-ab.js to run first (it does, {{__BUILD_AB__}} comes before {{__BUILD_URL__}} in index-template.html)
-const cdnSplitCfPercentByGroup = { control: 100, variant: 0 }; //__CDN_SPLIT_CF_PERCENT_BY_GROUP__
+//Needs build-ab.js to run first (it does, index-template.html injects it just above this script).
+//Don't write the template tag names in these scripts: PostProcessBuildWebGL replaces them in comments too, which injected build-ab.js twice in skb05
+const cdnSplitCfPercentByGroup = {}; //__CDN_SPLIT_CF_PERCENT_BY_GROUP__
 //R2 only allows CORS from these hosts, everywhere else (proxies, portals) stays on Bunny
 const cdnSplitCfHosts = ["smashkarts.io", "www.smashkarts.io", "smashkarts-dev.firebaseapp.com", "smashkarts-dev.web.app", "localhost"];
 const cdnUrls = {
@@ -412,6 +414,7 @@ const cdnName = (function ()
 const buildUrl = cdnUrls[cdnName].build;
 const addressablesUrl = cdnUrls[cdnName].addressables;
 
+
 	//lets every firebase analytics event (old and new) be split by CDN
 	if (typeof cdnName !== "undefined" && enableFirebaseAnalytics && firebase.analytics != null) firebase.analytics().setUserProperties({ cdn: cdnName });
 	const loaderUrl = buildUrl + "/" + loaderFile;
@@ -428,7 +431,10 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
 		streamingAssetsUrl: "StreamingAssets",
 		companyName: "TallTeam",
 		productName: "Smash Karts",
-		productVersion: "2.16.053",
+		productVersion: "2.16.062",
+		//the data file and bundle names are content hashes, so a copy in Unity's IndexedDB cache is valid forever. Unity's default
+		//is must-revalidate, a 304 round trip per file on every load (~330 ms each on Cloudflare), immutable uses the cached copy without asking the CDN
+		cacheControl: function (url) { return (url == config.dataUrl || url.match(/\.bundle/)) ? "immutable" : "no-store"; },
 	};
 	//the four build files, absolute so they compare with resource timing entry names, for the per file stats in getLoadStats()
 	loadTiming.buildFiles = {
