@@ -139,6 +139,52 @@
 			<!-- <div data-pw-desk="leaderboard_atf" data-pw-mobi="leaderboard_atf"></div> -->
 		</div>
 	</div>
+	<!-- framed portal-style layout (desktop home site, AdinPlay only) - see scripts/frame-layout.js. The AdinPlay unit divs inside each slot are created by frame-layout.js from frameAdUnits (constants.js) -->
+	<div id="frameLeft" class="frameSlot"></div>
+	<div id="frameRight" class="frameSlot"></div>
+	<div id="frameBanner" class="frameSlot"></div>
+	<div id="frameBar">
+		<div id="frameBarLogo"><img src="images/smashkarts.png" alt="Smash Karts"></div>
+		<div id="frameInfo"></div>
+		<div id="frameBarActions">
+			<button id="framePlayMobileBtn" type="button" title="Play On Mobile" aria-label="Play On Mobile">
+				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="2" width="10" height="20" rx="2" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="18" r="1" fill="currentColor"/><rect x="9.5" y="5" width="5" height="5" fill="currentColor"/></svg>
+			</button>
+			<button id="frameControlsBtn" type="button" title="Controls" aria-label="Controls">
+				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M6 10h.01M9 10h.01M12 10h.01M15 10h.01M18 10h.01M7.5 14h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+			</button>
+			<a id="frameDiscordBtn" href="https://discord.gg/smashkarts" target="_blank" rel="noopener" title="Discord" aria-label="Discord">
+				<!-- Official Discord "Clyde" logomark, from discord-icon-svgrepo-com.svg - currentColor so it matches the other bar icons -->
+				<svg viewBox="0 -28.5 256 256" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid"><path d="M216.856339,16.5966031 C200.285002,8.84328665 182.566144,3.2084988 164.041564,0 C161.766523,4.11318106 159.108624,9.64549908 157.276099,14.0464379 C137.583995,11.0849896 118.072967,11.0849896 98.7430163,14.0464379 C96.9108417,9.64549908 94.1925838,4.11318106 91.8971895,0 C73.3526068,3.2084988 55.6133949,8.86399117 39.0420583,16.6376612 C5.61752293,67.146514 -3.4433191,116.400813 1.08711069,164.955721 C23.2560196,181.510915 44.7403634,191.567697 65.8621325,198.148576 C71.0772151,190.971126 75.7283628,183.341335 79.7352139,175.300261 C72.104019,172.400575 64.7949724,168.822202 57.8887866,164.667963 C59.7209612,163.310589 61.5131304,161.891452 63.2445898,160.431257 C105.36741,180.133187 151.134928,180.133187 192.754523,160.431257 C194.506336,161.891452 196.298154,163.310589 198.110326,164.667963 C191.183787,168.842556 183.854737,172.420929 176.223542,175.320965 C180.230393,183.341335 184.861538,190.991831 190.096624,198.16893 C211.238746,191.588051 232.743023,181.531619 254.911949,164.955721 C260.227747,108.668201 245.831087,59.8662432 216.856339,16.5966031 Z M85.4738752,135.09489 C72.8290281,135.09489 62.4592217,123.290155 62.4592217,108.914901 C62.4592217,94.5396472 72.607595,82.7145587 85.4738752,82.7145587 C98.3405064,82.7145587 108.709962,94.5189427 108.488529,108.914901 C108.508531,123.290155 98.3405064,135.09489 85.4738752,135.09489 Z M170.525237,135.09489 C157.88039,135.09489 147.510584,123.290155 147.510584,108.914901 C147.510584,94.5396472 157.658606,82.7145587 170.525237,82.7145587 C183.391518,82.7145587 193.761324,94.5189427 193.539891,108.914901 C193.539891,123.290155 183.391518,135.09489 170.525237,135.09489 Z" fill="currentColor" fill-rule="nonzero"/></svg>
+			</a>
+			<!-- TODO confirm handle: @smashkarts is assumed, the official account isn't linked anywhere yet -->
+			<a id="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" href="https://www.tiktok.com/@smash_karts" target="_blank" rel="noopener" title="TikTok" aria-label="TikTok">
+				<!-- TikTok note logomark (Simple Icons) - currentColor so it matches the other bar icons -->
+				<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.840-.02 8.750-.08 1.4-.54 2.79-1.35 3.940-1.31 1.920-3.58 3.170-5.91 3.210-1.43.08-2.860-.31-4.080-1.030-2.020-1.190-3.440-3.370-3.650-5.710-.02-.5-.03-1-.01-1.490.18-1.9 1.120-3.720 2.580-4.960 1.660-1.440 3.980-2.130 6.150-1.720.02 1.480-.04 2.960-.04 4.440-.99-.32-2.150-.23-3.020.37-.63.41-1.110 1.040-1.360 1.750-.21.51-.15 1.070-.14 1.610.24 1.640 1.820 3.020 3.500 2.870 1.120-.01 2.190-.66 2.770-1.610.19-.33.4-.67.41-1.060.1-1.790.06-3.570.07-5.360.01-4.030-.01-8.050.02-12.070z" fill="currentColor"/></svg>
+			</a>
+			<button id="frameFullscreenBtn" type="button" title="Fullscreen" aria-label="Fullscreen">
+				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+			</button>
+		</div>
+	</div>
+	<div id="framePlayMobilePanel" class="frameSlidePanel" hidden>
+		<div class="frameSlidePanelHeader">
+			<h3>Play On Mobile</h3>
+			<button id="framePlayMobileCloseBtn" type="button" aria-label="Close">&times;</button>
+		</div>
+		<div id="frameQrCode"><img src="images/skmobileqr.png" alt="QR code to play Smash Karts on mobile"></div>
+		<p>Scan with your phone's camera to play on mobile</p>
+	</div>
+	<div id="frameControlsPanel" class="frameSlidePanel" hidden>
+		<div class="frameSlidePanelHeader">
+			<h3>Controls</h3>
+			<button id="frameControlsCloseBtn" type="button" aria-label="Close">&times;</button>
+		</div>
+		<ul>
+			<li>WASD / Arrow keys &mdash; drive</li>
+			<li>Space &mdash; shoot</li>
+		</ul>
+	</div>
 	<div id="pw-video-container"> <!-- playwire -->
 		<div id="pw_video_placeholder"></div>
 	</div>
@@ -167,6 +213,10 @@
 <script src="scripts/auth.js"></script>
 <script src="scripts/shop.js"></script>
 <script src="scripts/cc.js"></script>
+<script src="scripts/frame-layout.js"></script>
+<script src="scripts/frame-bar.js"></script>
+<script src="scripts/house-promo-config.js"></script>
+<script src="scripts/house-promo.js"></script>
  
 <script src="scripts/ads-common-logic.js"></script>
 <!--<script src="scripts/ads-offcanvas-logic.js"></script>-->
@@ -254,17 +304,17 @@
 	var sentGameInstanceStartEvent = false;
 
 	// choose the data file based on whether there's support for the ASTC texture compression format
-	var dataFile = "/3a2790b097d7cf6dc6dc642d01126f13.data.br";
-	var mobileDataFile = "/184d2bd4c778fb595e028311e0e7b7e0.data.br";
+	var dataFile = "/f5cf9dbef77b8de1d4265f97b1855d11.data.br";
+	var mobileDataFile = "/3ed5f41880098aa915c2e06520c90c07.data.br";
     
-    var addressableCatalogFilename = "catalog_2026.10.23.09.47.14.json";
-    var mobileAddressableCatalogFilename = "catalog_2026.10.23.09.48.34.json";
+    var addressableCatalogFilename = "catalog_2026.11.03.16.26.14.json";
+    var mobileAddressableCatalogFilename = "catalog_2026.11.03.16.27.04.json";
 	var usingMobileData = false;
 
 	//vars rather than inline so build-ab.js can swap in the A/B test variant's files
 	var loaderFile = "c4ce55f6fd990c1236bc84106eb955bf.loader.js";
-	var frameworkFile = "a8389363313c7373641ccf13bbaee88a.framework.js.br";
-	var codeFile = "78affe29270e090629c90aa051a4224f.wasm.br";
+	var frameworkFile = "3dfde1476b3e62753ce1e4587713b2c3.framework.js.br";
+	var codeFile = "73ee56e088229c8dc9a9f5e3bf47082d.wasm.br";
 
 	//safety check to ensure we dont try to use the mobileDataFile if the filename hasnt been parsed during the build phase
 	if(!mobileDataFile.includes("MOBILE_DATA_FILENAME"))
@@ -355,7 +405,7 @@ if (buildAbGroup !== "")
 	//CDN A/B split: each player is put on Bunny or Cloudflare R2 and kept there (localStorage) so their browser cache stays warm.
 //?cdn=bunny or ?cdn=cf forces one for this load without changing the stored choice
 //The percentage below is the default, buildscripts/set_cdn_split.sh sets it per deploy without a rebuild
-const cdnSplitCfPercent = 90; //__CDN_SPLIT_CF_PERCENT__
+const cdnSplitCfPercent = 100; //__CDN_SPLIT_CF_PERCENT__
 //optional per web build A/B test group percentages that replace cdnSplitCfPercent for that group, eg { control: 100, variant: 0 }.
 //Needs build-ab.js to run first (it does, index-template.html injects it just above this script).
 //Don't write the template tag names in these scripts: PostProcessBuildWebGL replaces them in comments too, which injected build-ab.js twice in skb05
@@ -431,7 +481,7 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
 		streamingAssetsUrl: "StreamingAssets",
 		companyName: "TallTeam",
 		productName: "Smash Karts",
-		productVersion: "2.16.062",
+		productVersion: "2.16.067",
 		//the data file and bundle names are content hashes, so a copy in Unity's IndexedDB cache is valid forever. Unity's default
 		//is must-revalidate, a 304 round trip per file on every load (~330 ms each on Cloudflare), immutable uses the cached copy without asking the CDN
 		cacheControl: function (url) { return (url == config.dataUrl || url.match(/\.bundle/)) ? "immutable" : "no-store"; },

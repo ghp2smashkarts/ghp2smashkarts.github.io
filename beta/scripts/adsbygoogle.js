@@ -1,1 +1,0 @@
-(function(){var n=document.createElement("div");n.id="sklocalscriptbait2";n.style.display="none";document.body.appendChild(n)})()

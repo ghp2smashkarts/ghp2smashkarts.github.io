@@ -1,1 +1,0 @@
-"use strict";setInterval(()=>{self.postMessage(Date.now())},self.checkTimeDelay)
