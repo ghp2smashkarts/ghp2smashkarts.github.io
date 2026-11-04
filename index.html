@@ -304,17 +304,17 @@
 	var sentGameInstanceStartEvent = false;
 
 	// choose the data file based on whether there's support for the ASTC texture compression format
-	var dataFile = "/5661f5e5845c8e24892de3ab10f9d653.data.br";
-	var mobileDataFile = "/c31c2b62f704b111ef8b0cd40e8d7b13.data.br";
+	var dataFile = "/0164827cecfdc0c01177b4df285a241b.data.br";
+	var mobileDataFile = "/ae344b19085e1b3dc18db2f9061a6a16.data.br";
     
-    var addressableCatalogFilename = "catalog_2026.11.04.10.43.18.json";
-    var mobileAddressableCatalogFilename = "catalog_2026.11.04.10.44.24.json";
+    var addressableCatalogFilename = "catalog_2026.11.04.16.52.29.json";
+    var mobileAddressableCatalogFilename = "catalog_2026.11.04.16.53.24.json";
 	var usingMobileData = false;
 
 	//vars rather than inline so build-ab.js can swap in the A/B test variant's files
 	var loaderFile = "c4ce55f6fd990c1236bc84106eb955bf.loader.js";
-	var frameworkFile = "9c9b35843acf949084cd6b3576127ace.framework.js.br";
-	var codeFile = "66e2174ae5f6775e5ddb6b916277d2fb.wasm.br";
+	var frameworkFile = "af3ef32eab14c63daef33edd17ffc300.framework.js.br";
+	var codeFile = "95dbefafc84e32c92e21537e27e15cd8.wasm.br";
 
 	//safety check to ensure we dont try to use the mobileDataFile if the filename hasnt been parsed during the build phase
 	if(!mobileDataFile.includes("MOBILE_DATA_FILENAME"))
@@ -481,7 +481,7 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
 		streamingAssetsUrl: "StreamingAssets",
 		companyName: "TallTeam",
 		productName: "Smash Karts",
-		productVersion: "2.16.069",
+		productVersion: "2.16.070",
 		//the data file and bundle names are content hashes, so a copy in Unity's IndexedDB cache is valid forever. Unity's default
 		//is must-revalidate, a 304 round trip per file on every load (~330 ms each on Cloudflare), immutable uses the cached copy without asking the CDN
 		cacheControl: function (url) { return (url == config.dataUrl || url.match(/\.bundle/)) ? "immutable" : "no-store"; },
