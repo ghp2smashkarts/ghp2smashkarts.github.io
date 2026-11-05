@@ -211,6 +211,7 @@
 
 <script src="scripts/main.js"></script>
 <script src="scripts/auth.js"></script>
+<script src="scripts/startup-data.js"></script>
 <script src="scripts/shop.js"></script>
 <script src="scripts/cc.js"></script>
 <script src="scripts/frame-layout.js"></script>
@@ -265,7 +266,8 @@
 		for (var i = 0; i < entries.length; i++)
 		{
 			var name = entries[i].name;
-			if (name.indexOf("/Build2020New/") >= 0 || name.indexOf("/assetbundles/") >= 0) loadTiming.cdnEntries.push(entries[i]);
+			//getGameDataMulti / getStartupDataMulti aren't CDN requests, they're kept for load_services' gd_req_ms / gd_net_ms
+			if (name.indexOf("/Build2020New/") >= 0 || name.indexOf("/assetbundles/") >= 0 || name.indexOf("/getGameDataMulti") >= 0 || name.indexOf("/getStartupDataMulti") >= 0) loadTiming.cdnEntries.push(entries[i]);
 		}
 	}
 
@@ -304,17 +306,17 @@
 	var sentGameInstanceStartEvent = false;
 
 	// choose the data file based on whether there's support for the ASTC texture compression format
-	var dataFile = "/0164827cecfdc0c01177b4df285a241b.data.br";
-	var mobileDataFile = "/ae344b19085e1b3dc18db2f9061a6a16.data.br";
+	var dataFile = "/50197e519de3dc3fccbcc480acc604b3.data.br";
+	var mobileDataFile = "/856f1c05c7652175560d51da171a7250.data.br";
     
-    var addressableCatalogFilename = "catalog_2026.11.04.16.52.29.json";
-    var mobileAddressableCatalogFilename = "catalog_2026.11.04.16.53.24.json";
+    var addressableCatalogFilename = "catalog_2026.11.05.15.50.25.json";
+    var mobileAddressableCatalogFilename = "catalog_2026.11.05.15.51.19.json";
 	var usingMobileData = false;
 
 	//vars rather than inline so build-ab.js can swap in the A/B test variant's files
 	var loaderFile = "c4ce55f6fd990c1236bc84106eb955bf.loader.js";
-	var frameworkFile = "af3ef32eab14c63daef33edd17ffc300.framework.js.br";
-	var codeFile = "95dbefafc84e32c92e21537e27e15cd8.wasm.br";
+	var frameworkFile = "adcec7506d0bdfa7c6c6f4ff6b0c3bb1.framework.js.br";
+	var codeFile = "c354d0a01eae1bcf3ecaf49c11ca91d1.wasm.br";
 
 	//safety check to ensure we dont try to use the mobileDataFile if the filename hasnt been parsed during the build phase
 	if(!mobileDataFile.includes("MOBILE_DATA_FILENAME"))
@@ -465,6 +467,10 @@ const buildUrl = cdnUrls[cdnName].build;
 const addressablesUrl = cdnUrls[cdnName].addressables;
 
 
+	//startup data builds (the A/B variant, see startup-data.js) start auth now rather than on window load, so a returning player's session
+	//is restored before Unity starts and the startup call can begin. Needs the A/B group, so it's here rather than straight after initializeApp
+	if (typeof isStartupDataBuild === "function" && isStartupDataBuild()) registerAuthListener(true);
+
 	//lets every firebase analytics event (old and new) be split by CDN
 	if (typeof cdnName !== "undefined" && enableFirebaseAnalytics && firebase.analytics != null) firebase.analytics().setUserProperties({ cdn: cdnName });
 	const loaderUrl = buildUrl + "/" + loaderFile;
@@ -515,7 +521,7 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
 		{
 			// iOS Safari doesn't support requestFullscreen() on arbitrary elements, so this
 			// is Android-only. Reuses the same fullscreen plumbing as the desktop toggle button.
-			setElementFullScreen(document.documentElement);
+			setElementFullScreen(document.documentElement, "auto");
 
 			// Keeps `fs` accurate (e.g. if the player leaves fullscreen via the back button/
 			// gesture rather than our own toggle) and shows a "tap to continue" prompt with
