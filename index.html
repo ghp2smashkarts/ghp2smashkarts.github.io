@@ -340,7 +340,7 @@
 	//Web build A/B test: each player is put on this page's build (control) or a second build (variant) and kept there (localStorage) so their browser cache stays warm.
 //buildscripts/ab_pair_variant.sh fills in the line below with the variant's build-manifest.json, test id and percentage. Unpaired, every player gets control and buildAbGroup is ""
 //?build=control or ?build=variant forces one for this load without changing the stored choice
-var buildAbVariant = null; var buildAbTest = ""; var buildAbVariantPercent = 0; //__BUILD_AB_VARIANT_MANIFEST__
+var buildAbVariant = {"buildVer":"2.16.072","clientVersion":"4.1.2","versionNum":412,"photonAppVersion":"1014","unityVersion":"2022.3.62f2","loader":"c4ce55f6fd990c1236bc84106eb955bf.loader.js","framework":"8a588eca81533c3e8d59aae772028788.framework.js.br","code":"33d869d7ec715595936b5240418e49b3.wasm.br","data":"83304cd02a1b57da7017d1fbf4864078.data.br","mobileData":"afbb5f640ed53ace5b72da8841682267.data.br","catalog":"catalog_2026.11.05.17.40.56.json","mobileCatalog":"catalog_2026.11.05.17.42.13.json","useStartupData":true}; var buildAbTest = "startupdata-nov26"; var buildAbVariantPercent = 20; //__BUILD_AB_VARIANT_MANIFEST__ paired by ab_pair_variant.sh: variant 2.16.072 (sk13)
 //only these hosts are in the test, everywhere else (proxies, portals) stays on control
 const buildAbHosts = ["smashkarts.io", "www.smashkarts.io", "smashkarts-dev.firebaseapp.com", "smashkarts-dev.web.app", "localhost"];
 var buildAbIsNew = false;
