@@ -131,7 +131,7 @@
 		<div id="adContainerDeath"> <!-- death -->
 
 			<!-- adinplay -->
-			<div id="smashkarts-io_728x90-new"></div><div id="smashkarts-io_970x250_md"></div>
+			<div id="smashkarts-io_728x90-new"></div>
 			<div id="smashkarts-io_320x100"></div>
 
 			<!-- playwire -->
@@ -270,8 +270,8 @@
 		for (var i = 0; i < entries.length; i++)
 		{
 			var name = entries[i].name;
-			//getGameDataMulti / getStartupDataMulti aren't CDN requests, they're kept for load_services' gd_req_ms / gd_net_ms
-			if (name.indexOf("/Build2020New/") >= 0 || name.indexOf("/assetbundles/") >= 0 || name.indexOf("/getGameDataMulti") >= 0 || name.indexOf("/getStartupDataMulti") >= 0) loadTiming.cdnEntries.push(entries[i]);
+			//getStartupDataMulti isn't a CDN request, it's kept for startup-data.js's token / net split (sd_token_ms / sd_net_ms)
+			if (name.indexOf("/Build2020New/") >= 0 || name.indexOf("/assetbundles/") >= 0 || name.indexOf("/getStartupDataMulti") >= 0) loadTiming.cdnEntries.push(entries[i]);
 		}
 	}
 
@@ -310,17 +310,17 @@
 	var sentGameInstanceStartEvent = false;
 
 	// choose the data file based on whether there's support for the ASTC texture compression format
-	var dataFile = "/f0efbefcb53d4c382fbd1d75804efc66.data.br";
-	var mobileDataFile = "/5f2b42979a149e4e4e39452f3364995d.data.br";
+	var dataFile = "/8c3ec40a2fcba1c9908a77c56e5a4c12.data.br";
+	var mobileDataFile = "/2b608ec9e1a6fd2ca9d6f71415623acc.data.br";
     
-    var addressableCatalogFilename = "catalog_2026.11.10.10.46.19.json";
-    var mobileAddressableCatalogFilename = "catalog_2026.11.10.10.47.41.json";
+    var addressableCatalogFilename = "catalog_2026.11.13.14.30.13.json";
+    var mobileAddressableCatalogFilename = "catalog_2026.11.13.14.31.18.json";
 	var usingMobileData = false;
 
 	//vars rather than inline so build-ab.js can swap in the A/B test variant's files
 	var loaderFile = "c4ce55f6fd990c1236bc84106eb955bf.loader.js";
-	var frameworkFile = "aece80b53914d798906dcdfa62079b54.framework.js.br";
-	var codeFile = "8e159fe50c0ef16a72550b7508e3112c.wasm.br";
+	var frameworkFile = "1ab388c3d6837a063eb93bd5d9a789d9.framework.js.br";
+	var codeFile = "d7ea880a52a33fe3b1d0e5ab3903f616.wasm.br";
 
 	//safety check to ensure we dont try to use the mobileDataFile if the filename hasnt been parsed during the build phase
 	if(!mobileDataFile.includes("MOBILE_DATA_FILENAME"))
@@ -344,7 +344,7 @@
 	//Web build A/B test: each player is put on this page's build (control) or a second build (variant) and kept there (localStorage) so their browser cache stays warm.
 //buildscripts/ab_pair_variant.sh fills in the line below with the variant's build-manifest.json, test id and percentage. Unpaired, every player gets control and buildAbGroup is ""
 //?build=control or ?build=variant forces one for this load without changing the stored choice
-var buildAbVariant = {"buildVer":"2.16.080","clientVersion":"4.1.2","versionNum":412,"photonAppVersion":"1014","unityVersion":"2022.3.62f2","loader":"c4ce55f6fd990c1236bc84106eb955bf.loader.js","framework":"53f050489003d576de4c8f49bff25da3.framework.js.br","code":"370cc5e4a51d270922b4e2dcc37d84a9.wasm.br","data":"853909b0843873e80bc8a478cc33b52d.data.br","mobileData":"5bb38b77407549a1b54516b9a2794d67.data.br","catalog":"catalog_2026.11.13.10.34.39.json","mobileCatalog":"catalog_2026.11.13.10.35.40.json","useStartupData":true}; var buildAbTest = "getplayerprofiles-13-11-26"; var buildAbVariantPercent = 30; //__BUILD_AB_VARIANT_MANIFEST__ paired by ab_pair_variant.sh: variant 2.16.080 (SmashKarts_skj033)
+var buildAbVariant = null; var buildAbTest = ""; var buildAbVariantPercent = 0; //__BUILD_AB_VARIANT_MANIFEST__
 //only these hosts are in the test, everywhere else (proxies, portals) stays on control
 const buildAbHosts = ["smashkarts.io", "www.smashkarts.io", "smashkarts-dev.firebaseapp.com", "smashkarts-dev.web.app", "localhost"];
 var buildAbIsNew = false;
@@ -497,7 +497,7 @@ const addressablesUrl = cdnUrls[cdnName].addressables;
 		streamingAssetsUrl: "StreamingAssets",
 		companyName: "TallTeam",
 		productName: "Smash Karts",
-		productVersion: "2.16.077",
+		productVersion: "2.16.082",
 		//the data file and bundle names are content hashes, so a copy in Unity's IndexedDB cache is valid forever. Unity's default
 		//is must-revalidate, a 304 round trip per file on every load (~330 ms each on Cloudflare), immutable uses the cached copy without asking the CDN
 		cacheControl: function (url) { return (url == config.dataUrl || url.match(/\.bundle/)) ? "immutable" : "no-store"; },
